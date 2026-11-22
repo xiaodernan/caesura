@@ -81,6 +81,8 @@ export interface DescendPanelDeps {
   run: DescendRun
   /** 面板不自己收自己（KI-061 的教训） */
   onRequestClose: () => void
+  /** KI-739：只报「发生了什么」（下了一层 / 做了一件事），送什么字段由宿主决定 */
+  onEvent?: (type: string, meta: { dep: number }) => void
 }
 
 type Row = { kind: 'act'; index: number } | { kind: 'nav'; nav: 'descend' | 'ascend' | 'surface' | 'close' }
@@ -156,8 +158,8 @@ export class DescendPanel {
     const row = this.rows()[this.focus]
     if (!row) return
     const run = this.deps.run
-    if (row.kind === 'act') { run.choose(row.index); return }
-    if (row.nav === 'descend') run.descend()
+    if (row.kind === 'act') { run.choose(row.index); this.deps.onEvent?.('descend-act', { dep: run.depth }); return }
+    if (row.nav === 'descend') { run.descend(); this.deps.onEvent?.('descend-floor', { dep: run.depth }) }
     else if (row.nav === 'ascend') run.ascend()
     else if (row.nav === 'surface') run.surface()
     else this.deps.onRequestClose()

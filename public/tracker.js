@@ -4,6 +4,8 @@
  * Ring buffer of 400 events. Read it back at /caesura/admin/ → 本机实况. Disable: localStorage.removeItem('caesura.telemetry.v1').
  * KI-653（KI-645 行动 #1）：`window.__caesuraTrack(type)` 是页面给自己打点的最小通道（首屏 Start 曝光/按下）；
  *   同样只写本机、同样进环形缓冲，不触网、不升数据包。
+ * KI-739：该通道可选第二参数，但**只收三个白名单标量**（dep / region / q）——功能采纳（深处/拾遗）
+ *   需要「哪一层、哪个区」，而埋点通道谁都能调，所以它自己必须比调用方更窄。
  * KI-720：默认仍然零网络；新增**显式 opt-in** 的真人上报通道。只有用户（或管理员页）
  * 调 `window.__caesuraLiveTelemetry(true, endpoint)` 之后才会向本地 Spring report 8082
  * 发送匿名事件；关掉后立刻停止。浏览器本地开关写 localStorage，页面刷新后保持用户的选择。
@@ -101,14 +103,28 @@
       push({ type: 'error', path: path, msg: String((ev && ev.message) || 'unknown').slice(0, 80) });
     });
 
-    /* KI-653（KI-645 行动 #1）：页面自己的埋点最小入口。白名单长度与字符收口，绝不弄坏本体。 */
+    /* KI-653（KI-645 行动 #1）：页面自己的埋点最小入口。白名单长度与字符收口，绝不弄坏本体。
+       KI-739：可选第二参数只收**三个白名单标量**（dep / region / q），对象里别的一律丢掉 ——
+       埋点通道不是通用上传口：谁都能调它，所以它自己必须比调用方更窄。 */
     try {
-      window.__caesuraTrack = function (type) {
+      window.__caesuraTrack = function (type, meta) {
         try {
           if (typeof type !== 'string' || type.length === 0) return;
           var k = String(type).slice(0, 32);
           bump(k);
-          push({ type: k, path: path });
+          var ev = { type: k, path: path };
+          if (meta && typeof meta === 'object') {
+            if (typeof meta.dep === 'number' && isFinite(meta.dep)) {
+              ev.dep = Math.max(1, Math.min(1000000, Math.floor(meta.dep)));
+            }
+            if (typeof meta.region === 'string' && meta.region.length > 0) {
+              ev.region = meta.region.slice(0, 32);
+            }
+            if (typeof meta.q === 'number' && isFinite(meta.q)) {
+              ev.q = Math.max(0, Math.min(3, Math.floor(meta.q)));
+            }
+          }
+          push(ev);
         } catch (e) { /* noop */ }
       };
     } catch (e) { /* noop */ }

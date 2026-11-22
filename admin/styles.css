@@ -456,3 +456,12 @@ header, main, footer { position: relative; z-index: 1; }
 .live-real-endpoint { display: inline-flex; align-items: center; gap: 6px; font: 10px var(--mono); color: var(--muted); }
 .live-real-endpoint input { width: 240px; max-width: 60vw; padding: 6px 8px; border: 1px solid var(--line-soft); border-radius: 3px; background: var(--ash-2); color: var(--silver); font: 10.5px var(--mono); }
 .live-real-state { font: 11px/1.6 var(--mono); color: var(--muted); margin: 10px 0 0; }
+
+/* KI-739 · 功能采纳：三列真实事件读数（与 live 同一套瓦片，窄屏落单列；不给固定高度防挤压） */
+.adopt-grid { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 16px; align-items: start; }
+@media (max-width: 980px) { .adopt-grid { grid-template-columns: minmax(0,1fr); } }
+.adopt-side { min-width: 0; }
+.adopt-side h3 { margin: 0 0 6px; font-size: 11px; color: var(--gold-dim); letter-spacing: .16em; font-family: var(--mono); font-weight: 500; }
+.adopt-side ol { margin: 0; padding-left: 20px; max-height: 180px; overflow: auto; font-family: var(--mono); font-size: 11px; color: var(--silver); }
+.adopt-side li { margin-bottom: 4px; }
+.adopt-note { margin: 10px 0 0; font-size: 11px; line-height: 1.6; color: var(--muted); }

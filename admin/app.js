@@ -4,6 +4,7 @@
  * 聚合数据 = 模拟队列（admin/data.js，固定种子可复算）；本机实况 = localStorage 真实事件。
  */
 import { TELEMETRY } from './data.js'
+import { adoption, pctOrDash } from './adoption.mjs'
 import {
   mean, movingAverage, linearRegression, forecast, anomalies, funnelRates,
   deriveRecommendations, pct, num, dur,
@@ -59,8 +60,21 @@ const STRINGS = {
   'live.h3': { zh: '最近 12 条事件', en: 'Last 12 events' },
   'live.clear': { zh: '清空本机记录', en: 'Clear local records' },
   'live.export': { zh: '导出本机 JSON', en: 'Export local JSON' },
-  'live.real.h2': { zh: '真人上报 · 本机 Spring 观察站', en: 'Real reporting · local Spring observatory' },
-  'live.real.note': { zh: '默认不上报。只有你在下面打开开关之后，浏览器才会向本机 report 服务（8082）发送匿名事件；公网静态站没有后端时如实显示「不可达」，绝不拿模拟数据冒充真实访客。', en: 'Off by default. Only after you flip the switch below does the browser send anonymous events to the local report service (8082). On a public static host with no backend it honestly reports “unreachable” — simulated data is never passed off as real visitors.' },
+  'adopt.h2': { zh: '功能采纳 · 深处与拾遗有没有被找到', en: 'Adoption · did anyone find the Deep and the echoes' },
+  'adopt.kicker': { zh: '真事件 · 本机环形缓冲 · 分母为零不造假', en: 'real events · local ring buffer · no invented denominators' },
+  'adopt.opens': { zh: '打开深处的次数', en: 'times the Deep was opened' },
+  'adopt.deepest': { zh: '走到的最深一层', en: 'deepest floor reached' },
+  'adopt.descents': { zh: '向下走的次数', en: 'descents' },
+  'adopt.acts': { zh: '深处里做过的动作', en: 'actions taken in the Deep' },
+  'adopt.echoes': { zh: '拾遗出现的次数', en: 'echoes shown' },
+  'adopt.rate': { zh: '每百次浏览打开深处', en: 'Deep opens per 100 views' },
+  'adopt.regions.h3': { zh: '拾遗出现在哪些区', en: 'Which reaches the echoes appeared in' },
+  'adopt.regions.empty': { zh: '还没有拾遗记录 —— 这不等于「拾遗有问题」，只等于这台浏览器还没走到过。', en: 'No echo records yet — that does not mean echoes are broken, only that this browser has not walked into one.' },
+  'adopt.note.empty': { zh: '这台浏览器还没有任何深处/拾遗事件。空表就是空表：这里不写 0%，也不拿模拟队列冒充你的行为。', en: 'No Deep or echo events on this browser yet. An empty table stays empty: no 0% here, and no simulated cohort passed off as your behaviour.' },
+  'adopt.note.windowed': { zh: '注意：本机只保留最近 ${n} 条事件 —— 下面是这段时间窗里的读数，不是全量。', en: 'Note: this device keeps only the latest ${n} events — these figures cover that window, not the whole history.' },
+  'adopt.note.thin': { zh: '样本偏薄（浏览 ${n} 次）：只报计数，不报比率 —— 二十次浏览以下的百分比会把噪声说成趋势。', en: 'Thin sample (${n} views): counts only, no rates — a percentage under twenty views turns noise into a trend.' },
+  'adopt.note.ok': { zh: '浏览 ${n} 次 · 深处打开 ${o} 次 —— 分母是真实的页面浏览，比率可以看了。', en: '${n} views · ${o} Deep opens — the denominator is real page views, the ratio is readable.' },
+  'live.real.h2': { zh: '真人上报 · 本机 Spring 观察站', en: 'Real reporting · local Spring observatory' },  'live.real.note': { zh: '默认不上报。只有你在下面打开开关之后，浏览器才会向本机 report 服务（8082）发送匿名事件；公网静态站没有后端时如实显示「不可达」，绝不拿模拟数据冒充真实访客。', en: 'Off by default. Only after you flip the switch below does the browser send anonymous events to the local report service (8082). On a public static host with no backend it honestly reports “unreachable” — simulated data is never passed off as real visitors.' },
   'live.real.toggle': { zh: '开启真人上报', en: 'Enable real reporting' },
   'live.real.toggle.off': { zh: '关闭真人上报', en: 'Disable real reporting' },
   'live.real.refresh': { zh: '拉取真实日聚合', en: 'Fetch real daily rollup' },
@@ -477,6 +491,37 @@ function renderLive() {
     const hhmmss = [t.getHours(), t.getMinutes(), t.getSeconds()].map((x) => String(x).padStart(2, '0')).join(':')
     return `<li><span style="color:var(--muted)">${hhmmss}</span> <b style="color:var(--gold)">${e.type}</b> <span class="ev-path">${e.path}</span></li>`
   }).join('')
+}
+
+/* ─────────── 功能采纳（KI-739）：真事件 → 可复算读数 ───────────
+   纯函数在 ./adoption.mjs（可单测）；这里只负责画。
+   三条纪律写在那一侧的文件头：分母为零是 null 不是 0、环形缓冲是窗口不是全量、样本薄只报计数。 */
+const tr = (k) => T(STRINGS[k].zh, STRINGS[k].en)
+function renderAdoption() {
+  const doc = readLocalTelemetry()
+  const events = doc && Array.isArray(doc.events) ? doc.events : []
+  const a = adoption(events)
+  const stats = $('#adoption-stats'), regionsEl = $('#adoption-regions'), note = $('#adoption-note')
+  if (!stats || !regionsEl || !note) return
+
+  const tiles = [
+    { n: String(a.opens), l: tr('adopt.opens') },
+    { n: a.deepest > 0 ? String(a.deepest) : '—', l: tr('adopt.deepest') },
+    { n: String(a.descents), l: tr('adopt.descents') },
+    { n: String(a.acts), l: tr('adopt.acts') },
+    { n: String(a.echoes.total), l: tr('adopt.echoes') },
+    { n: a.opensPerView === null ? '—' : pctOrDash(a.opensPerView), l: tr('adopt.rate') },
+  ]
+  stats.innerHTML = tiles.map((s) => `<div class="live-stat"><div class="l-num">${s.n}</div><div class="l-label">${s.l}</div></div>`).join('')
+
+  regionsEl.innerHTML = a.echoes.regions.length
+    ? a.echoes.regions.map((r) => `<li><b style="color:var(--gold)">${r.region}</b> <span class="ev-path">×${r.count}</span></li>`).join('')
+    : `<li class="live-empty" style="list-style:none;margin-left:-20px">${tr('adopt.regions.empty')}</li>`
+
+  if (a.sample === 0) note.textContent = tr('adopt.note.empty')
+  else if (!a.confident) note.textContent = tr('adopt.note.thin').split('${n}').join(String(a.pageviews))
+  else if (a.windowed) note.textContent = tr('adopt.note.windowed').split('${n}').join(String(a.capacity))
+  else note.textContent = tr('adopt.note.ok').split('${n}').join(String(a.pageviews)).split('${o}').join(String(a.opens))
 }
 
 /* KI-720：真人上报（opt-in）。只从 Spring report 读**真实**逐日聚合，拿不到就如实说不可达。 */
@@ -1273,7 +1318,7 @@ function renderMethod() {
 function renderAll() {
   renderKpis(); renderTrend(); renderFunnel(); renderChannels(); renderDevices()
   renderHours(); renderCohorts(); renderAnomalies(); renderExits(); renderRecs()
-  renderLive(); renderLiveReportState(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderRouter(); renderBuild(); renderPriors(); renderLedger(); renderForecast(); renderCacheMetrics(); renderSiteHealth();
+  renderLive(); renderAdoption(); renderLiveReportState(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderRouter(); renderBuild(); renderPriors(); renderLedger(); renderForecast(); renderCacheMetrics(); renderSiteHealth();
 }
 function tickClock() {
   const t = new Date()
@@ -1296,6 +1341,7 @@ $('#live-export').addEventListener('click', () => {
 $('#live-clear').addEventListener('click', () => {
   try { localStorage.removeItem(TELEMETRY_KEY) } catch { /* noop */ }
   renderLive()
+  renderAdoption()
   note(T('本机记录已清空', 'Local records cleared'))
 })
 $('#live-report-toggle')?.addEventListener('click', () => {

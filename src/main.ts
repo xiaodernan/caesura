@@ -378,6 +378,7 @@ const mapUi = new MapUI(regions, {
 const descendPanel = new DescendPanel({
   run: descendRun,
   onRequestClose: () => setDescendOpen(false),
+  onEvent: (type, meta) => track(type, meta),
 })
 
 /**
@@ -424,7 +425,11 @@ function setPanelOpen(open: boolean): void { setOverlay(open ? 'panel' : null) }
 /** 地图（`map` 键与面板的 onRequestClose 走它） */
 function setMapOpen(open: boolean): void { setOverlay(open ? 'map' : null) }
 /** 深处（地图里的「再下一层」与深处屏的 onRequestClose 走它，KI-737） */
-function setDescendOpen(open: boolean): void { setOverlay(open ? 'descend' : null) }
+function setDescendOpen(open: boolean): void {
+  // KI-739：开一次记一次（带当时深度）——「有没有人真的找到深处」不该靠猜
+  if (open) track('descend-open', { dep: descendRun.depth })
+  setOverlay(open ? 'descend' : null)
+}
 const overlayOpen = (): boolean => overlay !== null
 new CombatDebugger()
 const haptics = new Haptics(input)
@@ -672,6 +677,21 @@ const worldState = new WorldState(worldstate, {
   setFlag: (k) => streaming.setFlag(k)
 })
 /**
+ * KI-739：功能采纳埋点。走 `public/tracker.js` 暴露的最小通道（本机 localStorage 环形缓冲 ·
+ * 零网络 · 玩家进程零 LLM）；通道不在 / 抛错都当作没记到——**埋点永远不许弄坏本体**（KI-653 的纪律）。
+ * 只送白名单标量（`dep` / `region`），与 `admin/adoption.mjs` 读的字段一一对应：
+ * 后台那边没有"猜字段名"的自由，这边也没有"多送一点上下文"的自由。
+ */
+function track(type: string, meta?: { dep?: number; region?: string }): void {
+  try {
+    const w = (typeof window !== 'undefined' ? window : undefined) as unknown as {
+      __caesuraTrack?: (t: string, m?: { dep?: number; region?: string }) => void
+    } | undefined
+    if (w && typeof w.__caesuraTrack === 'function') w.__caesuraTrack(type, meta)
+  } catch { /* 埋点永远不许弄坏本体 */ }
+}
+
+/**
  * 拾遗层（KI-736）：八区各若干条「走着走着撞见的一段具体之物」。
  * 触发**只有一个声源**——`ui.region.enter`（跨区那一帧）；开局首区由 boot 末尾补一次。
  * 确定性选取 + 会话内不重复 + 零 LLM：同档读两次看到的是同一个世界。
@@ -682,6 +702,8 @@ const echoes = new WanderingEchoes(wanderingEchoesTable.entries as WanderingEcho
   onEcho: (e) => {
     const en = getLang() === 'en'
     bus.emit('ui.notify', { text: `${en ? e.titleEn : e.titleZh} · ${en ? e.textEn : e.textZh}`, kind: 'info' })
+    // KI-739：拾遗有没有真的出现、出现在哪个区——后台「功能采纳」读的就是这一条
+    track('echo-shown', { region: e.regionId })
   },
 })
 bus.on('ui.region.enter', (p) => { echoes.onRegionEnter(p.regionId) })
@@ -1243,10 +1265,7 @@ async function startRun(slot: string | null): Promise<void> {
   // KI-656（KI-645 行动 #2）：进入世界后也把两个长读入口说一次（不越 §41「只在调音桩前能打开」）
   if (!slot) {
     bus.emit('ui.notify', { text: t('ui.notify.atlasCodex'), kind: 'info' })
-    try {
-      const w = (typeof window !== 'undefined' ? window : undefined) as unknown as { __caesuraTrack?: (t: string) => void } | undefined
-      if (w && typeof w.__caesuraTrack === 'function') w.__caesuraTrack('inworld-atlas-hint')
-    } catch { /* 埋点永远不许弄坏开局 */ }
+    track('inworld-atlas-hint')
   }
   bus.emit('ui.notify', { text: t('ui.notify.rank', { rank: rpg.prog.rank, xp: rpg.prog.xp }) + (rpg.prog.unspent > 0 ? t('ui.notify.unspent', { n: rpg.prog.unspent }) : ''), kind: 'info' })
   // KI-141：序章目标（还没接任何委托时，箭头指着该先找的人）

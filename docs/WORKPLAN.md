@@ -682,3 +682,4 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | KI-736 | **拾遗 · 世界细节遭遇**：ai-wandering-echoes 作者侧（RAG canon + 真跑 gpt-6.2-sol）+ 人工策展运行时表 + WanderingEchoes 确定性选取（区域/旗标/值域门控、会话内不重复、零 LLM）+ validate-data 校验 + main.ts 接 ui.region.enter + 双语守卫 | KI-736 |
 | KI-737 | **深处 · 无尽扇区可玩层**：Descend 运行时（前 N 层原样引用表对象 + 第 N+1 层起确定性复沓、同层去重、10000 层照样完整）+ DescendPanel（三列不挤压/窄屏单列/六处可看/三条动作/教学行/诚实行/手记）+ 菜单第六格 descend（名册→uiStep→setOverlay 三块互斥）+ 地图右栏入口 + 复沓层不落旗标（深度无上限 ⇒ 不许无限膨胀存档）· 21 腿守卫 | KI-737 |
 | KI-738 | **说明书同步**：教程第 14 步「深处 · 走不完的那一层」（Tab→地图右栏→再下一层 + 前十二层审过/之后复沓/不计里程/已落记录不回滚）+ 拾遗交代 + 页脚补齐 82–85 篇（中英）+ 修「篇四十一篇」叠字 · tutorial-deep 6 腿（双语俱在/入口一致/边界与 Descend.ts 同源/段数守恒 31=31/篇目到底/叠字不再） | KI-738 |
+| KI-739 | **功能采纳读数**：`__caesuraTrack` 白名单第二参数（dep/region/q）+ 游戏侧三处埋点（descend-open/descend-floor/descend-act/echo-shown）+ 纯函数 `admin/adoption.mjs`（null 不冒充 0 / windowed 自报 / <20 浏览只报计数）+ 后台「功能采纳」面板（三列不挤压 + 空表诚实行）· 13 腿守卫 | KI-739 |
