@@ -4509,5 +4509,76 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Not every emptiness needs filling — some empty places are kept for whoever arrives here.</p>
     <p class="coda">The age of hush has not ended. It has only gained one more empty niche — the salt on the threshold, the thin ledger shut, the boat still, the wind having passed, every lamp burning, one niche kept for those who carry no lamp — and she was well too.</p>`,
   },
+  {
+    no: 91,
+    zhTitle: "未铸之钟",
+    enTitle: "The Bell Not Cast",
+    zh: `<p>回廊钟东墙外有一道缓坡，坡下是铸钟坊。坊里没有钟，只有一只倒扣在坑里的模。</p>
+<p>模是两只泥壳合起来的，外头箍着三圈铁箍，接缝处抹了封泥。三十九年前，最后一口钟就是在这个坑里浇出来的；浇完，匠人把下一只模也做好了，却再没有开炉。</p>
+
+<div class="beat">· · ·</div>
+
+<p>阿汐小时候来过一次。她问带她来的老人：这只模里是什么？老人说：是一口钟。她又问：那为什么不浇？老人说：那时候大家数过了，钟够了；再多一口，数就乱了。</p>
+<p>模就这么留在坑里。铸钟坊的炉子却一直没熄——不浇铜，只压着一层小火。守坊人说，模最怕冷：一冷，泥壳自己就会裂；裂了，就什么也留不住。</p>
+
+<div class="beat">· · ·</div>
+
+<p>阿汐蹲下去，把耳朵贴在浇口上。浇口只有一个拳头大，是铜水进来的地方，边沿还留着一圈当年没擦净的黑。</p>
+<p>里面没有声音。不是空屋子的那种没有声音，也不是死人的那种；是一种<strong>有形状的没有声音</strong>——像一个人把一句话含在嘴里，含了三十九年，连气都按着原来的样子。</p>
+
+<div class="beat">· · ·</div>
+
+<p>守坊人走过来，把手掌放在泥壳上，说：钟把声音收在铜里，模把声音收在空里。铜里的那一口，敲了就响；空里的这一口，谁也敲不着。</p>
+<p>阿汐问：那它算不算一口钟？</p>
+<p>守坊人没有答。他弯腰把炉门开了一线，火苗往里缩了一下，又慢慢立起来。他说：你听。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她听了很久。坡上有人在关窗，一只碗落在石板上，没有碎；风从坡上下来，绕过坊子，从另一头走了。这些都是外面的声音。</p>
+<p>里面那一层，始终没有动静。可她忽然发觉，自己一直在按着一个拍子呼吸——三拍，一停。和模的接缝一样：两只泥壳，合在一条线上，中间那道缝，正好把一口气分成两半。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她翻开薄簿，在末页写下：第九十一口，未铸。</p>
+<p>写完看了一会儿，又添了两个字：已在。</p>
+<p>守坊人看见了，什么也没说，只把封泥重新按了按，让那道接缝合得更严一点。炉子压着小火，泥壳里那口没有铜的钟，仍旧含着它那一口气。</p>
+
+<p class="coda">不是所有的钟都要浇出来。</p>
+<p class="coda">有的钟把铜省下来，只留下一个钟形的空——你贴近去听，听见的是自己那口气，在钟里绕了一圈，没有散。</p>
+<p class="coda">止音纪元没有结束。它只是又多了一口钟——没有铜，没有舌，没有声音；炉子压着小火，模合着，接缝上那道线还在，等一个不打算敲的人来听。</p>`,
+    en: `<p>Below the east wall of the Arcade of Echoes the ground slopes down to a casting yard. There are no bells in the yard — only a mould, turned upside down in its pit.</p>
+<p>The mould is two clay shells closed together, bound with three iron hoops, the seam sealed with clay. Thirty-nine years ago the last bell of the Arcade was poured in this pit. When it was done, the founder built the next mould too, and then never opened the furnace again.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Axi came here once as a child. She asked the old man who brought her: what is inside this mould? A bell, he said. Then why wasn’t it poured? he said: because by then we had counted them, and the bells were enough. One more, and the count would go wrong.</p>
+<p>So the mould stayed in its pit. But the furnace in the casting yard was never put out — no copper in it, only a low fire banked under the ash. The yard-keeper says a mould fears the cold: once it goes cold, the clay shells crack by themselves, and then nothing is kept at all.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Axi crouches and puts her ear to the pour gate. The gate is no bigger than a fist — the way the copper was meant to come in — and its rim still carries a ring of black no one wiped away that year.</p>
+<p>There is no sound inside. Not the no-sound of an empty room, nor the no-sound of the dead; it is a <strong>no-sound with a shape</strong> — like a person holding a sentence in the mouth for thirty-nine years, holding even the breath in its original shape.</p>
+
+<div class="beat">· · ·</div>
+
+<p>The yard-keeper comes over and lays his palm on the clay shell. A bell, he says, keeps its sound in the bronze; a mould keeps its sound in the emptiness. The one in bronze rings when you strike it. The one in the emptiness, no one can strike.</p>
+<p>Axi asks: then is it a bell or not?</p>
+<p>He does not answer. He bends, opens the furnace door a finger’s width; the flame shrinks back, then slowly stands up again. He says: listen.</p>
+
+<div class="beat">· · ·</div>
+
+<p>She listens a long while. Up the slope someone is closing a window; a bowl falls on the flagstones and does not break; the wind comes down the slope, goes around the yard, and leaves by the other side. All of that is outside sound.</p>
+<p>The layer inside never stirs. But she suddenly notices that she has been breathing to a beat — three, then a pause. The same as the seam of the mould: two clay shells closed on a single line, and the seam between them splits one breath neatly in two.</p>
+
+<div class="beat">· · ·</div>
+
+<p>She opens the thin ledger and writes on the last page: the ninety-first bell, not cast.</p>
+<p>She looks at it a while, then adds two words: already here.</p>
+<p>The yard-keeper sees it and says nothing. He only presses the sealing clay down again, so the seam closes a little tighter. The furnace keeps its low fire; the bell with no bronze in it keeps holding its one breath.</p>
+
+<p class="coda">Not every bell has to be poured.</p>
+<p class="coda">Some bells spare the copper and leave only a bell-shaped emptiness — lean in and listen, and what you hear is your own breath going once around inside it, not scattering.</p>
+<p class="coda">The age of hush has not ended. It has only gained one more bell — no bronze, no clapper, no sound; the furnace banked low, the mould closed, the line of the seam still there, waiting for someone who does not mean to strike it.</p>`,
+  },
 ]
 

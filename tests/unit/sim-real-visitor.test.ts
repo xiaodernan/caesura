@@ -18,10 +18,10 @@ import {
 } from '../../scripts/sim-real-visitor.mjs'
 
 describe('sim-real-visitor 纯函数', () => {
-  it('storySlugs = 90 项（ORDER 全量），过滤后 = 89 个真实页面', () => {
+  it('storySlugs = 91 项（ORDER 全量），过滤后 = 90 个真实页面', () => {
     const all = storySlugs()
-    expect(all.length).toBe(90)
-    expect(all.filter(Boolean).length).toBe(89)
+    expect(all.length).toBe(91)
+    expect(all.filter(Boolean).length).toBe(90)
   })
 
   it('publicPageList：去重且包含 anthology / codex / cast / admin', () => {
@@ -34,7 +34,7 @@ describe('sim-real-visitor 纯函数', () => {
     expect(pages).toContain('/caesura/admin/')
     expect(pages).toContain('/caesura/story/the-salt-is-there/')
     expect(pages).toContain('/caesura/story/two-lines/')
-    expect(listStoryPages().length).toBe(89)
+    expect(listStoryPages().length).toBe(90)
   })
 
   it('extractInnerLinks：只返回 /caesura/ 唯一内链', () => {

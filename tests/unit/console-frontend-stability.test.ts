@@ -295,6 +295,10 @@ describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
       "'篇八十九 · 风在灰上写字': 'No. 89 · The Wind Writes on the Ash',",
       "'篇九十 · 空着的一格': 'No. 90 · The One Left Empty',",
       "'《空着的一格》': 'The One Left Empty',",
+      "'篇九十一': 'No. 91',",
+      "'篇九十一 · 未铸之钟': 'No. 91 · The Bell Not Cast',",
+      "'《未铸之钟》': 'The Bell Not Cast',",
+      "'未铸之钟': 'The Bell Not Cast',",
       "'《风在灰上写字》': 'The Wind Writes on the Ash',",
       "'风在灰上写字': 'The Wind Writes on the Ash',",
       "'灰替风记账 · 线每天换方向 · 有些账不抄下来才不会被记成债': 'The ash keeps the wind’s accounts; the line changes direction daily; some accounts never copied never become debts',",
@@ -314,9 +318,9 @@ describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
       "'门外的船仍停着船底的干痕仍在 · 阿汐没有量它们之间的距离 · 有些刻度不必拿来量': 'Some measures need not be used.',",
       "'天亮了阿汐没有去看海 · 光斜进来落在盐身上它没有动 · 有些盐在那儿就够了': 'Some salt is there, and that is enough',",
 
-      "'余响九十篇 · 沉默的编年史': 'Ninety Chronicles · The Chronicles of Silence',",
-      "'九十篇都是《止音纪元》的人间注脚——每一篇双语对照、零 LLM；完整全文见': 'The ninety stories are The Epoch of Hush in mortal footnotes — each one bilingual, zero LLM; the full volume:',",
-      "'（约四百五十分钟 · 九十篇整册可读）': '(about 450 minutes · read all ninety)',",
+      "'余响九十一篇 · 沉默的编年史': 'Ninety-One Chronicles · The Chronicles of Silence',",
+      "'九十一篇都是《止音纪元》的人间注脚——每一篇双语对照、零 LLM；完整全文见': 'The ninety-one stories are The Epoch of Hush in mortal footnotes — each one bilingual, zero LLM; the full volume:',",
+      "'（约四百五十五分钟 · 九十一篇整册可读）': '(about 455 minutes · read all ninety-one)',",
 
       "'余响三十七篇 · 沉默的编年史': 'Thirty-seven Chronicles · The Chronicles of Silence',",
       "'STATEGRAPH · 状态图内核': 'State Graph Kernel',",
