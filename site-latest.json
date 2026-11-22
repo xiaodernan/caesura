@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "97c397a51337ee2b85ccff37ece5c7609fbd2a3a",
+  "head": "71f3a33fbf8c6b980136e4e34cf334d24651bbc7",
   "branch": "master",
-  "subject": "第89篇《风在灰上写字》+ 全集/索引/控制台/教程/README 89 篇对齐",
-  "date": "2026-11-22T21:53:16+08:00",
+  "subject": "第90篇《空着的一格》+ 全集/索引/控制台/教程/README/母题索引 90 篇对齐",
+  "date": "2026-11-22T22:18:54+08:00",
   "kv": {
     "KI.rows": 659,
     "KI.Implemented": 482,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/97c397a51337ee2b85ccff37ece5c7609fbd2a3a",
+    "url": "https://github.com/xiaodernan/caesura/commit/71f3a33fbf8c6b980136e4e34cf334d24651bbc7",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
