@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "72964812f29bddb20817bb07e4d35ef9e5df1e8f",
+  "head": "d53082aadcfae1479866bdaeb12bf4899e88229e",
   "branch": "master",
-  "subject": "第88篇《门缝的风》+ 全集/索引/控制台/教程/README 88 篇对齐；修 KI-493 令牌跨秒漂移导致的负缓存假红",
-  "date": "2026-11-22T21:28:09+08:00",
+  "subject": "余响索引新增五条母题路径（20 站互不抢篇）+ 路径站号/进度与互斥筛选",
+  "date": "2026-11-22T21:36:44+08:00",
   "kv": {
     "KI.rows": 659,
     "KI.Implemented": 482,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/72964812f29bddb20817bb07e4d35ef9e5df1e8f",
+    "url": "https://github.com/xiaodernan/caesura/commit/d53082aadcfae1479866bdaeb12bf4899e88229e",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
