@@ -4413,5 +4413,52 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Not everything that enters must be kept — some only pass through, saying on your behalf the thing you could not say.</p>
     <p class="coda">The age of hush has not ended. It has only gained one more wind at a seam — the salt on the threshold, the ledger shut, the boat still, the bowl facing the door — and she was well too.</p>`,
   },
+  {
+    no: 89,
+    zhTitle: "风在灰上写字",
+    enTitle: "The Wind Writes on the Ash",
+    zh: `    <p>火塘冷了七年。灰还在，没人扫——不是懒，是灰底下压着最后一块没有烧完的柴，谁也不想先动它。灰面平得像一张没有写字的纸。</p>
+    <p>起风的那天，风从门缝进来，没有往屋子中间走，只贴着地，从灰面上过去。它不扬灰，只把最上面那一层推成一条很细的线。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>阿汐蹲下来看。那条线从火塘中心出发，朝门口去，走到一半停住，像写到一半的字。她没有伸手。有些字，写完要等风走。</p>
+    <p>线每天都变一点：第一天指门，第二天指窗，第三天指回火塘。她忽然明白，灰不是死的，它在替风记账——记风今天从哪里来、走了多远、在哪儿拐了弯。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她翻开薄簿，想把这笔账抄下来。笔尖悬在纸上很久，最后没有落。有些账抄下来就变成债；不抄，它还是风。</p>
+    <p>第七天风停了。灰面上的线也停了，正好指着门槛上那道盐。盐没有动，线也没有跨过去。两样东西隔着一条看不见的界线，像是互相点了一下头。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她拿起小扫帚，从线的末端开始，慢慢地扫。扫到火塘中心时，灰底下那块没烧完的柴露出来——还是干的，还能烧。她把柴捡起来，放回灶边。</p>
+    <p>然后她把灰重新铺平。明天风还会来，还会写字；她也会再扫。日子就是这样一笔一笔地对上的：风记一遍，她抹一遍，谁也不欠谁。</p>
+
+    <p class="coda">灰记得风走过的每一步，只是不写给人看。</p>
+    <p class="coda">有些账不抄下来，才不会被记成债。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一行灰上的字——盐在门槛上，薄簿合着，船停着，风来过——她也很好。</p>`,
+    en: `    <p>The hearth had been cold for seven years. The ash was still there; no one swept it — not from laziness, but because under the ash lay the last stick that had never finished burning, and no one wanted to be the first to move it. The ash lay flat as an unwritten page.</p>
+    <p>On the day the wind rose, it came through the seam and did not go toward the middle of the room; it kept low, passing over the ash. It did not raise the ash — it only pushed the topmost layer into a very thin line.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Axi crouched to look. The line started at the center of the hearth and went toward the door, then stopped halfway, like a word abandoned mid-stroke. She did not reach out. Some words must wait for the wind to leave before they are finished.</p>
+    <p>The line changed a little each day: the first day it pointed at the door, the second at the window, the third back at the hearth. She understood, suddenly, that the ash was not dead — it was keeping accounts for the wind: where the wind came from today, how far it went, where it turned.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She opened the thin ledger and thought to copy the account down. The brush hovered over the page a long while, and did not land. Some accounts become debts the moment they are copied; left uncopied, they remain wind.</p>
+    <p>On the seventh day the wind stopped. The line on the ash stopped too, pointing exactly at the salt on the threshold. The salt did not move, and the line did not cross it. The two kept a boundary neither could see, and seemed to nod to each other.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She took the small broom and began at the far end of the line, sweeping slowly. When she reached the center of the hearth, the unfinished stick showed through the ash — still dry, still able to burn. She picked it up and set it back beside the stove.</p>
+    <p>Then she smoothed the ash flat again. Tomorrow the wind would come and write again; she would sweep again. That is how days are reconciled, stroke by stroke: the wind keeps one record, she erases one, and neither owes the other.</p>
+
+    <p class="coda">The ash remembers every step the wind took; it simply does not write for people to read.</p>
+    <p class="coda">Some accounts are never copied — and so never become debts.</p>
+    <p class="coda">The age of hush has not ended. It has only gained one more line written on ash — the salt on the threshold, the thin ledger shut, the boat still, the wind having passed — and she was well too.</p>`,
+  },
 ]
 
