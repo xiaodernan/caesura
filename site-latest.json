@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "70517827345e8939bd63d7e2e3b02f3d5456a942",
+  "head": "c614f58ea5b990b223356cee9420a0614f2f7eb5",
   "branch": "master",
-  "subject": "feat: KI-736 拾遗·世界细节遭遇 · 八区密度层 + 零 LLM 运行时",
-  "date": "2026-11-22T13:10:06+08:00",
+  "subject": "feat: KI-737 深处 · 把无尽扇区接成玩家真能走下去的一层",
+  "date": "2026-11-22T13:29:10+08:00",
   "kv": {
-    "KI.rows": 654,
-    "KI.Implemented": 477,
+    "KI.rows": 655,
+    "KI.Implemented": 478,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/70517827345e8939bd63d7e2e3b02f3d5456a942",
+    "url": "https://github.com/xiaodernan/caesura/commit/c614f58ea5b990b223356cee9420a0614f2f7eb5",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
