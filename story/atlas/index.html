@@ -33,6 +33,9 @@
   .rule { width:170px; height:1px; margin:22px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
   .stats { display:flex; justify-content:center; gap:26px; flex-wrap:wrap; margin-top:20px; font-size:.74rem; color:var(--ink-dim); letter-spacing:.1em; }
   .stats b { color:var(--gold); font-weight:600; font-size:1.05rem; margin-left:4px; }
+  .quick { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:16px; }
+  .quick button { cursor:pointer; font-family:inherit; font-size:.76rem; color:var(--ink); background:rgba(217,180,106,.12); border:1px solid var(--gold-soft); border-radius:999px; padding:8px 18px; letter-spacing:.1em; transition:all .2s ease; }
+  .quick button:hover { background:rgba(217,180,106,.24); box-shadow:0 0 16px rgba(217,180,106,.25); }
   .controls { margin:26px auto 8px; max-width:860px; }
   .search { width:100%; font-family:inherit; font-size:.95rem; color:var(--ink); background:rgba(26,19,10,.78); border:1px solid rgba(243,237,224,.14); border-radius:999px; padding:12px 20px; outline:none; }
   .search:focus { border-color:var(--gold-soft); box-shadow:0 0 0 3px rgba(217,180,106,.1); }
@@ -90,6 +93,10 @@
       <span class="zh-copy">收录<b id="statTotal">86</b>篇</span><span class="en-copy">Stories<b id="statTotalEn">86</b></span>
       <span class="zh-copy">母题<b id="statMotifs">12</b>类</span><span class="en-copy">Motifs<b id="statMotifsEn">12</b></span>
       <span class="zh-copy">本机已读<b id="statRead">0</b>/86</span><span class="en-copy">Read here<b id="statReadEn">0</b>/86</span>
+    </div>
+    <div class="quick">
+      <button id="continueBtn" type="button"><span class="zh-copy">接着读</span><span class="en-copy">Continue reading</span></button>
+      <button id="randomBtn" type="button"><span class="zh-copy">随便读一篇</span><span class="en-copy">Surprise me</span></button>
     </div>
   </header>
 
@@ -755,12 +762,23 @@
     readSet = (doc && doc.done) || {};
   } catch (e) { readSet = {}; }
   var readCount = 0;
+  var firstUnread = null;
   cards.forEach(function (c) {
     var slug = (c.getAttribute('href') || '').replace('/caesura/story/', '').replace(/\/$/, '') || '(salt)';
     if (readSet[slug]) { c.classList.add('is-read'); readCount++; }
+    else if (!firstUnread) { firstUnread = c; }
   });
   document.getElementById('statRead').textContent = readCount;
   document.getElementById('statReadEn').textContent = readCount;
+  document.getElementById('continueBtn').addEventListener('click', function () {
+    var target = firstUnread || cards[Math.floor(Math.random() * cards.length)];
+    if (target) location.href = target.getAttribute('href');
+  });
+  document.getElementById('randomBtn').addEventListener('click', function () {
+    var pool = cards.filter(function (c) { return !c.hidden; });
+    var target = pool[Math.floor(Math.random() * pool.length)] || cards[Math.floor(Math.random() * cards.length)];
+    if (target) location.href = target.getAttribute('href');
+  });
 
   function motifCount(id) {
     return cards.filter(function (c) { return (' ' + c.getAttribute('data-motifs') + ' ').indexOf(' ' + id + ' ') >= 0 }).length;

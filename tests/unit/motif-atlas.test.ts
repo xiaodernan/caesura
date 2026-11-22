@@ -39,6 +39,8 @@ describe('Motif Atlas 余响索引（story/atlas/index.html）', () => {
     }
     expect(HTML).toContain('id="q"')
     expect(HTML).toContain('id="statRead"')
+    expect(HTML).toContain('id="continueBtn"')
+    expect(HTML).toContain('id="randomBtn"')
     expect(HTML).toContain("localStorage.getItem('caesura.reading.v1')")
   })
 
