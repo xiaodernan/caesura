@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "56ba21faf826f869ec6b9595c6856879aa707ee8",
+  "head": "70517827345e8939bd63d7e2e3b02f3d5456a942",
   "branch": "master",
-  "subject": "feat: KI-735 LLM 驱动条件路由世界状态机 · StateGraph.addConditionalEdges 首次真用",
-  "date": "2026-11-21T23:44:39+08:00",
+  "subject": "feat: KI-736 拾遗·世界细节遭遇 · 八区密度层 + 零 LLM 运行时",
+  "date": "2026-11-22T13:10:06+08:00",
   "kv": {
-    "KI.rows": 653,
-    "KI.Implemented": 476,
+    "KI.rows": 654,
+    "KI.Implemented": 477,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -16,7 +16,7 @@
     "SYS.Blocked": 0,
     "ARCH.sections": 202,
     "ARCH.holes": "none",
-    "PKG.scripts": 95
+    "PKG.scripts": 97
   },
   "suites": {
     "consoleUi": 150,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/56ba21faf826f869ec6b9595c6856879aa707ee8",
+    "url": "https://github.com/xiaodernan/caesura/commit/70517827345e8939bd63d7e2e3b02f3d5456a942",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
