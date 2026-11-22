@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "b85165f62ebfd125d750372c0b51fea40f2b54a6",
+  "head": "3c6e987d9e311ad35ac71b8daea549577d894b75",
   "branch": "master",
-  "subject": "feat: KI-741 深处的可见性 · 手记正文 + 地图首开提示",
-  "date": "2026-11-22T14:04:44+08:00",
+  "subject": "docs(stress): record reproducible pressure-mesh and live stress readings (2026-11-22)",
+  "date": "2026-11-22T18:35:26+08:00",
   "kv": {
     "KI.rows": 659,
     "KI.Implemented": 482,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/b85165f62ebfd125d750372c0b51fea40f2b54a6",
+    "url": "https://github.com/xiaodernan/caesura/commit/3c6e987d9e311ad35ac71b8daea549577d894b75",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
