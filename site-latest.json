@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "cfa064906acc67672fa5c0775dd717e63ed0c91b",
+  "head": "c6d77931885ab14438c9f8db7fe57cf87a7ba4e6",
   "branch": "master",
-  "subject": "docs(sim): refresh the 94-page real-visitor reading (cold + warm CDN)",
-  "date": "2026-11-22T20:39:36+08:00",
+  "subject": "chore(atlas): drop the stale story count from the generator header",
+  "date": "2026-11-22T20:41:23+08:00",
   "kv": {
     "KI.rows": 659,
     "KI.Implemented": 482,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/cfa064906acc67672fa5c0775dd717e63ed0c91b",
+    "url": "https://github.com/xiaodernan/caesura/commit/c6d77931885ab14438c9f8db7fe57cf87a7ba4e6",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
