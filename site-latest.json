@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "7f480a5d4345f1b3d0a166b08f803710668f0a67",
+  "head": "e5949ee037e00b34d4187600af58ba15d5121f11",
   "branch": "master",
-  "subject": "第92篇《浇口上的黑》+ 全集/索引/控制台/教程/README/母题索引 92 篇对齐",
-  "date": "2026-11-22T23:16:23+08:00",
+  "subject": "余响索引：新增第六条母题路径「钟线」（bell/line/empty/ash · 24 站互不抢篇）",
+  "date": "2026-11-22T23:19:01+08:00",
   "kv": {
     "KI.rows": 659,
     "KI.Implemented": 482,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/7f480a5d4345f1b3d0a166b08f803710668f0a67",
+    "url": "https://github.com/xiaodernan/caesura/commit/e5949ee037e00b34d4187600af58ba15d5121f11",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
