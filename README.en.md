@@ -124,7 +124,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 
 ## Stress runs (measured 2026-11-22)
 
-Two reproducible paths; the readings are recorded as-is:
+Three reproducible paths; the readings are recorded as-is:
 
 ```bash
 node scripts/pressure-mesh.mjs --iterations=400 --concurrency=40
@@ -132,11 +132,16 @@ node scripts/pressure-mesh.mjs --iterations=400 --concurrency=40
 
 node scripts/stress-live.mjs --target=/caesura/ --concurrency=24 --rounds=2
 # 48/48 HTTP 200 with non-empty bodies · 0 failures · mean 267.5ms · p50 132ms · p95 424ms · p99 504ms · 305,136 bytes
+
+node scripts/sim-real-visitor.mjs --seed=1
+# 93/93 pages 200 · 0 bad pages · 12 blind hops, 0 failures · outbound referrer 200 · 3,164,579 bytes · avg 34,028 bytes · 5,721ms
 ```
 
 The first measures our own routing chain / decision / transport-mock cost (in-process, deterministic);
 the second hammers the public read-only page and measures CDN + Pages concurrency and tail latency.
 Both are read-only; any non-zero failure rate exits 1.
+The third simulates two real visitor behaviours — “bail out when impatient” and “click around when lost” —
+and now samples the newly shipped Motif Atlas; zero LLM, zero writes throughout.
 
 ## Where to read
 

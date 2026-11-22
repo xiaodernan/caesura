@@ -133,7 +133,7 @@ npm run build          # tsc + vite build + check-dist（产物：dist/）
 
 ## 压力测试实测（2026-11-22）
 
-两条可复现的压测路径，读数原样记录，不做修饰：
+三条可复现的压测路径，读数原样记录，不做修饰：
 
 ```bash
 node scripts/pressure-mesh.mjs --iterations=400 --concurrency=40
@@ -141,10 +141,15 @@ node scripts/pressure-mesh.mjs --iterations=400 --concurrency=40
 
 node scripts/stress-live.mjs --target=/caesura/ --concurrency=24 --rounds=2
 # 48/48 HTTP 200 且 body 非空 · 0 失败 · mean 267.5ms · p50 132ms · p95 424ms · p99 504ms · 305,136 bytes
+
+node scripts/sim-real-visitor.mjs --seed=1
+# 93/93 页面 200 · 0 坏页 · 盲点 12 跳 0 失败 · 出域 referrer 200 · 3,164,579 bytes · avg 34,028 bytes · 5,721ms
 ```
 
 前者测本侧路由链 / 决策 / transport mock 的开销（进程内、确定性）；后者打公网只读页面，
 测 CDN + Pages 的并发承受与尾部延迟。两者都只读、不改数据，失败率非零即退出码 1。
+第三行模拟真实访客的两种典型行为——「没耐心就关掉」与「不知道去哪就瞎点」；
+取样覆盖含新上线的《余响索引》，全程零 LLM、零写入。
 
 ## 文档地图
 
