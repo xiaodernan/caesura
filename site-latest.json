@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "b3f3085618dc68ab4d37fae05fe38f1018b93a77",
+  "head": "e8a6e347f82cd445aaa8a49dea1862e4bd8a1196",
   "branch": "master",
-  "subject": "场景圣经/AI 导演提示词与 atlas 头注：八十五篇 → 九十二篇（消除上下文自相矛盾）",
-  "date": "2026-11-22T23:20:53+08:00",
+  "subject": "merge origin/master: integrate parallel KI-742+ work; resolve test conflicts (keep KI-393 meta-rule compliant)",
+  "date": "2026-11-23T13:35:20+08:00",
   "kv": {
-    "KI.rows": 659,
-    "KI.Implemented": 482,
+    "KI.rows": 661,
+    "KI.Implemented": 484,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/b3f3085618dc68ab4d37fae05fe38f1018b93a77",
+    "url": "https://github.com/xiaodernan/caesura/commit/e8a6e347f82cd445aaa8a49dea1862e4bd8a1196",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
