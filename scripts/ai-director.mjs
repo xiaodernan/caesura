@@ -527,6 +527,9 @@ function writeArtifacts(state) {
 
   // ⑦ LLM 缓存命中账本（rolling ≤80 次运行 · 独立文件 · 不改变最新产物对外形状）：
   //    让「持续 ≈90% 命中、无突然掉缓存」从一次实测变成可长期审计的持久证据（admin 页读它渲染）。
+  //    KI-742：只有 live 真跑才有"缓存命中"概念；offline dry-run（llm_calls=0）绝不写账本——
+  //    API 关闭后项目长期跑 offline，若照写会不断污染账本（steadyHit=null 的无效行）。
+  if (state.mode === 'live') {
   try {
     const metricsPath = resolve(ROOT, 'admin/ai-cache-metrics.json')
     const authoringMetricsPath = resolve(ROOT, 'src/data/authoring/ai-cache-metrics.json')
@@ -569,6 +572,7 @@ function writeArtifacts(state) {
     // 账本写失败不致命：最新产物已经落盘；如实登记到 errors 但不阻断管线
     state.errors.push({ node: 'cacheMetrics', message: String((e && e.message) || e) })
   }
+  } // KI-742 · mode==='live' 守卫结束
 }
 
 /* ═══════════ 组图 ═══════════ */

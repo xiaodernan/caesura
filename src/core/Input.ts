@@ -511,6 +511,13 @@ export class Input {
   cancelKeyCapture(): void { this.captureArmed = false; this.captured = null; this.capturedBy = null }
 
   /**
+   * 读：此刻是不是在等一枚键当新绑定（KI-742）。只给页面级热键用——`L` 切语言那条判据要问它，
+   * 否则改键时按下的那一枚既会被记成新绑定、又会顺手把界面语言换掉（一次按下变成两个结果）。
+   * 它**不是**第二条写入通道：武装仍只由 `armKeyCapture`／`cancelKeyCapture`／`takeKeyCapture` 三处改。
+   */
+  get isCapturing(): boolean { return this.captureArmed }
+
+  /**
    * 取走并熄灭。为什么是"取"不是"看"：同一枚键被看两遍就是两个主人，而改键这条路是
    * 一次按下 ⇒ 一次换格。**没按时一格都不动**（尤其不许顺手撤掉武装）：面板每帧都要问一次，
    * 若"还没键"也把武装清了，玩家真正按下的那一枚就没人接了。

@@ -46,10 +46,15 @@ describe('i18n Lang 双字典同构', () => {
     expect(en).toEqual(zh)
   })
 
+  /** KI-742 · 语言名是专名：两词典都原样显示对方语言名（English 在中文界面也叫 English，中文在英文界面也显示中文），
+   *  不算"中英夹杂"——与 LangKey.ts 的 LANG_NAME_KEY 设计一致。 */
+  const PROPER_NAME_KEYS = new Set(['ui.lang.name.zh', 'ui.lang.name.zhTW', 'ui.lang.name.en'])
+
   it('EN 字典里不许出现 CJK 字符（英文模式不夹杂中文）', () => {
     const en = bodyOf(dictBlock('EN'))
     expect(Object.keys(en).length).toBeGreaterThan(0)
     for (const [k, v] of Object.entries(en)) {
+      if (PROPER_NAME_KEYS.has(k)) continue
       expect(v, `EN 键 ${k} 里有中文字形`).not.toMatch(/[一-鿿]/)
     }
   })
@@ -60,6 +65,7 @@ describe('i18n Lang 双字典同构', () => {
     expect(Object.keys(zh).length).toBeGreaterThan(0)
     const forbidden = /\b(Boss|Codex|LangGraph|NPC|StateGraph|DAG|Ending|Encore|English|Meg|FPS|DEF|pause|online)\b/i
     for (const [k, raw] of Object.entries(zh)) {
+      if (PROPER_NAME_KEYS.has(k)) continue
       const v = raw.replace(/\$\{[^}]*\}/g, ' ').replace(/\`[^\`]*\`/g, ' ')
       expect(v, `ZH 键 ${k} 里还夹着英文叙述`).not.toMatch(forbidden)
     }

@@ -49,10 +49,23 @@ describe('KI-420｜QualityTier 信任边界（clampQuality）', () => {
 })
 
 describe('KI-420｜档位表（QUALITY_PROFILES）五腿', () => {
-  it('名字与档位一一对应：低/中/高/极高', () => {
-    expect(QUALITY_NAMES).toHaveLength(4)
+  it('名字与档位一一对应：每一格档名都有自己那一档，每一档都在唯一主人表里有格', () => {
+    /* 原来这两行把四格档名抄成字面数组（`['低','中','高','极高']`）钉在主人对面。
+       KI-420 自己写着「②四档的名字仍是临时词」——一组连签发都没有的词，不该在尺里再存一份第二账；
+       名册涨一档时那种抄本只会安静地少说一格（KI-393 丙）。所以钉的是对应关系：
+       档名张数＝档位张数、档名不许重名、每一格档名都非空、且每一位都有 `QUALITY_PROFILES` 里的一格。 */
+    expect(QUALITY_NAMES.length, `档名张数要跟档位名册同长；今天读数是「${QUALITY_NAMES.join('／')}」`)
+      .toBe(QUALITY_TIERS.length)
+    expect(new Set(QUALITY_NAMES).size, '两格同名 ⇒ 设置页会出现两行一模一样的字').toBe(QUALITY_NAMES.length)
+    /* 每一档的字段形状与 0 档一比：`toBeDefined()` 在这张深度冻结表上是恒真的（本仓那条 0=0 教训），
+       所以这里比的不是「有没有」，而是「和第一格一模一样」。 */
+    const 样 = Object.keys(QUALITY_PROFILES[0]).sort().join('、')
+    QUALITY_TIERS.forEach((t, i) => {
+      const n = QUALITY_NAMES[i] ?? ''
+      expect(n.trim(), `第 ${i} 档（${t}）的档名不许是空白`).not.toBe('')
+      expect(Object.keys(QUALITY_PROFILES[t]).sort().join('、'), `「${n}」那一档的字段和 0 档不齐（缺腿的档）`).toBe(样)
+    })
     expect(QUALITY_TIERS).toEqual([0, 1, 2, 3])
-    expect(QUALITY_NAMES).toEqual(['低', '中', '高', '极高'])
   })
   it('默认档等于 2（高），且表里每一格都有完整值——没有缺腿的格', () => {
     expect(DEFAULT_QUALITY).toBe(2)

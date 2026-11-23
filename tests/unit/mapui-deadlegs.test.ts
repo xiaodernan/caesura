@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { registerGameData, regions } from '@/data'
-import { PICK_INTENTS, UI_BINDS, type UiIntent } from '@/core/Input'
+import { PICK_INTENTS, UI_BINDS, UI_NAV_INTENTS, type UiIntent } from '@/core/Input'
 import { atlasOf, MapUI, type MapDeps, type MapFacility } from '@/ui/MapUI'
 
 /**
@@ -108,13 +108,14 @@ describe('批30 守门：地图上的八格导航意图必须有可观察效果�
     expect(m.isOpen).toBe(true)
   })
 
-  it('八格导航意图每格都有可观察效果；九格 pick 在地图上静默（L237 那条活腿）', () => {
-    // 名册从 `UI_BINDS` 现推，不是手抄八格：谁往通道里加新意图（zoomIn 之类），
-    // 这里就要求地图上也有一个可观察效果，否则 L237 会把漏接吞成"静默意图"。
+  it('导航意图每一格都有可观察效果；pick 那一族在地图上静默（L237 那条活腿）', () => {
+    // 名册从 `UI_BINDS` 现推，右值也从主人 `UI_NAV_INTENTS` 现推——两头都不抄字面：
+    // 谁往通道里加新意图（zoomIn 之类），这里就要求地图上也有一个可观察效果，否则 L237 会把漏接吞成"静默意图"。
+    // （KI-393 乙：这一行原来把八格逐枚抄成字面数组，主语是本地算出来的 `nav`，丙那条腿走不到主人，看不见它。）
     const bound = new Set<UiIntent>([...Object.values(UI_BINDS.keyboard), ...Object.values(UI_BINDS.padButtons)])
     const picks = new Set<string>(PICK_INTENTS)
     const nav = [...bound].filter((i) => !picks.has(i)).sort()
-    expect(nav, '地图上"必须有读者"的那八格').toEqual(['back', 'confirm', 'down', 'left', 'pageNext', 'pagePrev', 'right', 'up'])
+    expect(nav, `地图上"必须有读者"的那 ${UI_NAV_INTENTS.length} 格`).toEqual([...UI_NAV_INTENTS].sort())
     const state = (m: MapUI, deps: ReturnType<typeof makeDeps>) => {
       const p = priv(m)
       return { cx: p.cx, cz: p.cz, zoom: p.zoom, closes: deps.closes.length, html: ((m as unknown as { root: FakeEl }).root).innerHTML }

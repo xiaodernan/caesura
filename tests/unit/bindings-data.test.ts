@@ -256,6 +256,165 @@ describe('KI-336 clampBindings：任何 blob 只能装出玩得下去的那张�
   })
 })
 
+/* 反抄本那一族（KI-391／KI-393 甲／KI-393 丙）共用的那把「只看代码」的scanner，从甲批那条 it 里提到文件级。
+   提到外面不是为了好看：丙格要走的正是同一套配平，两份各写一遍就是「第二份账」在本文件里的重演——
+   上一批的教训原话是「尺在自己住的那份文件里漏掉了它要抓的一枚」，共享一份 scanner 才数得清谁漏了。
+   行为与甲批落地那天逐字相同：`配平` 只是多了两个带默认值的参数，旧调用一符不变。 */
+const 第 = (文: string, i: number): string => (i >= 0 && i < 文.length ? 文[i] ?? '' : '')
+/** 先把「不是代码」的那些位置划出去：引号串、模板串、行注释、块注释、正则字面量。
+ *  上一版没有这一层，把本条自己那句 indexOf('expect(') 当成了一处调用点，从那一行起整份文件再没往下看——
+ *  于是这把尺在自己住的那份文件里漏掉了它要抓的一枚，报出来的名单短了一枚，而短名单看着仍是绿的。
+ *  正则字面量必须一起划：本文件里就住着一枚 /['"`][A-Z]{18,}['"`]/，三种引号都在里头，
+ *  不划的话头一枚引号会一路吞掉后面的真代码。 */
+const 码位 = (文: string): Uint8Array => {
+  const 表 = new Uint8Array(文.length)
+  表.fill(1)
+  const 吞串 = (i: number, q: string): number => {
+    表[i] = 0
+    let j = i + 1
+    while (j < 文.length) {
+      const d = 第(文, j)
+      if (d === '\\') { 表[j] = 0; 表[j + 1] = 0; j += 2; continue }
+      if (d === q) { 表[j] = 0; return j }
+      if (d === '\n' && q !== '`') break
+      表[j] = 0
+      j++
+    }
+    return j - 1
+  }
+  let 上 = ''
+  for (let i = 0; i < 文.length; i++) {
+    if (表[i] !== 1) continue
+    const c = 第(文, i)
+    if (c === "'" || c === '"' || c === '`') { 上 = c; i = 吞串(i, c); continue }
+    if (c === '/' && (第(文, i + 1) === '/' || 第(文, i + 1) === '*')) {
+      const 止 = 第(文, i + 1) === '/' ? 文.indexOf('\n', i) : 文.indexOf('*/', i + 2)
+      const 末 = 止 < 0 ? 文.length - 1 : 第(文, i + 1) === '/' ? 止 : 止 + 1
+      for (let j = i; j <= 末 && j < 文.length; j++) 表[j] = 0
+      i = 止 < 0 ? 文.length : 末
+      continue
+    }
+    /* 正则字面量先**探**再划：在同一条里找得到收尾的那枚斜杠，才把整段划成非代码；
+       找不到就说明这一枚斜杠是除号。上一版边写边划，又拿「紧挨着的前一个字符」（空格也算）当记号，
+       于是 `=> /re/` 里那枚斜杠后面一旦探不到收尾，整行的真括号全被划走，配平再也回不到 0。 */
+    if (c === '/' && (上 === '' || '([{,=:&|?;+-*%~^<>'.includes(上))) {
+      let j = i + 1
+      let 类 = false
+      let 闭 = -1
+      while (j < 文.length) {
+        const d = 第(文, j)
+        if (d === '\n') break
+        if (d === '\\') { j += 2; continue }
+        if (类) { if (d === ']') 类 = false } else if (d === '[') 类 = true
+        else if (d === '/') { 闭 = j; break }
+        j++
+      }
+      if (闭 >= 0) {
+        for (let k = i; k <= 闭; k++) 表[k] = 0
+        let k = 闭 + 1
+        while (k < 文.length && /[a-z]/.test(第(文, k))) { 表[k] = 0; k++ }
+        上 = '/'
+        i = k - 1
+        continue
+      }
+    }
+    if (!/\s/.test(c)) 上 = c
+  }
+  return 表
+}
+const 跳串 = (文: string, i: number): number => {
+  const q = 第(文, i)
+  let j = i + 1
+  while (j < 文.length) { if (第(文, j) === '\\') { j += 2; continue } if (第(文, j) === q) return j; j++ }
+  return j
+}
+/* 从一枚开括号起，按深度走到配对的闭括号；非代码位置（串身与注释）一概不参与配平 */
+const 配平 = (文: string, 表: Uint8Array, 开: number, 开符 = '(', 闭符 = ')'): number => {
+  let d = 0
+  for (let j = 开; j < 文.length; j++) {
+    if (表[j] !== 1) continue
+    const c = 第(文, j)
+    if (c === 开符) d++
+    else if (c === 闭符) { d--; if (d === 0) return j }
+  }
+  return -1
+}
+/* 主语取第一个顶层逗号之前的那一段；若它只是个标识符，把它那行 const 的右端拉进来一起看 */
+const 主语段 = (参: string, 文: string): string => {
+  let d = 0, k = 0
+  for (; k < 参.length; k++) {
+    const c = 参[k] ?? ''
+    if (c === "'" || c === '"' || c === '`') { k = 跳串(参, k); continue }
+    if (c === '(' || c === '[' || c === '{') d++
+    else if (c === ')' || c === ']' || c === '}') d--
+    else if (c === ',' && d === 0) break
+  }
+  const 主 = 参.slice(0, k)
+  const id = /^(\w+)(\.length)?$/.exec(主.trim())
+  if (!id) return 主
+  const 名 = id[1]
+  if (!名) return 主
+  const m = new RegExp('(?:const|let)\\s+' + 名 + '\\s*(?::[^=\\n]*)?=\\s*([^\\n]{0,240})').exec(文)
+  return m ? 主 + '=>' + m[1] : 主
+}
+/* expect( 收尾之后只容许一枚「说明」实参，再往下必须紧跟链式调用。
+   丙格要从链上再走一步去配平断言实参里那枚数组，所以这里连「段落在原文里的绝对起点」一起交出去——
+   只给片段的话，丙格就得把上面这段跳过逻辑再抄一遍，那正是这一族尺要抓的形状。 */
+const 尾段 = (文: string, 闭: number): { 段: string; 基: number } => {
+  let j = 闭 + 1
+  while (j < 文.length && /\s/.test(第(文, j))) j++
+  if (第(文, j) === ',') {
+    j++
+    let d = 0
+    while (j < 文.length) {
+      const c = 第(文, j)
+      if (c === "'" || c === '"' || c === '`') { j = 跳串(文, j) + 1; continue }
+      if (c === '(') d++
+      else if (c === ')') { if (d === 0) break; d-- }
+      j++
+    }
+    j++
+  }
+  return { 段: 文.slice(j, j + 160), 基: j }
+}
+const 裸数 = (尾: string): string | null => {
+  const m = /^\s*(?:\.\s*not)?\s*\.\s*(toBe|toHaveLength|toEqual)\(\s*([^)]{0,80}?)\s*\)/.exec(尾)
+  const v = m?.[2]
+  return v && /^\d+$/.test(v) ? v : null
+}
+/** 主语那一侧经过若干跳标识符展开之后，究竟见过哪些名字：
+ *  名册常常不是直接出现在断言里，而是隔着一两枚本地别名（`const 名册 = (CORE as …).MENU_OWNERS`）。
+ *  只认「这一行有没有那个名字」的判据会把别名后面的抄本全放过——今天真咬到的那一处正是这一形状。 */
+/** 本仓的尺大量用中文标识符（`名册`／`键池`／`派键`），而 JS 的 `\w` 不认中文：
+ *  拿 `\w` 认别名的话，正是今天这一处（`const 名册 = ….MENU_OWNERS`）会从链上掉下来，
+ *  尺于是既抓不到抄本也不报错——同一把尺的第三种瞎法，先在字元类上补掉。 */
+const ID源 = '[A-Za-z_$\\u4e00-\\u9fff][\\w$\\u4e00-\\u9fff]*'
+const 见过 = (定义: Map<string, string>, 起点: string, 跳 = 3): Set<string> => {
+  const 出 = new Set<string>()
+  let 池 = [起点]
+  for (let k = 0; k < 跳 && 池.length; k++) {
+    const 下: string[] = []
+    for (const 段 of 池) {
+      for (const m of 段.matchAll(new RegExp(ID源, 'g'))) {
+        const 名 = m[0]
+        if (出.has(名)) continue
+        出.add(名)
+        const d = 定义.get(名)
+        if (d) 下.push(d)
+      }
+    }
+    池 = 下
+  }
+  return 出
+}
+const 本地定义 = (文: string): Map<string, string> => {
+  const 出 = new Map<string, string>()
+  for (const m of 文.matchAll(new RegExp('(?:const|let)\\s+(' + ID源 + ')\\s*(?::[^=\\n]{0,120})?=\\s*([^\\n]{0,240})', 'g'))) {
+    if (m[1] && m[2] && !出.has(m[1])) 出.set(m[1], m[2])
+  }
+  return 出
+}
+
 describe('KI-391 派键的来路：不许是名册长度的一份抄本', () => {
   it('池装得下名册，而且池里每一把都过 clampBindings 的语法关（不够长要响，不许静默少覆盖一格）', () => {
     expect(键池.length, `池 ${键池.length} 格要 ≥ 名册 ${BINDABLE_ACTIONS.length} 枚——池短一枚，多出来的那枚就派成 undefined`)
@@ -297,126 +456,8 @@ describe('KI-391 派键的来路：不许是名册长度的一份抄本', () => 
     const root = fileURLToPath(new URL('../../', import.meta.url))
     const TOKENS = ['ACTION_NAMES', 'BINDABLE_ACTIONS', 'UI_INTENTS', 'UI_NAV_INTENTS', 'PICK_INTENTS', 'UI_NAV', 'UI_PICK', 'STATUS_IDS', 'ActionName', 'UiIntent']
     const 像名册 = (s: string): boolean => TOKENS.some((t) => new RegExp('(^|[^A-Za-z_])' + t + '($|[^A-Za-z_])').test(s))
-    const 第 = (文: string, i: number): string => (i >= 0 && i < 文.length ? 文[i] ?? '' : '')
-    /** 先把「不是代码」的那些位置划出去：引号串、模板串、行注释、块注释、正则字面量。
-     *  上一版没有这一层，把本条自己那句 indexOf('expect(') 当成了一处调用点，从那一行起整份文件再没往下看——
-     *  于是这把尺在自己住的那份文件里漏掉了它要抓的一枚，报出来的名单短了一枚，而短名单看着仍是绿的。
-     *  正则字面量必须一起划：本文件里就住着一枚 /['"`][A-Z]{18,}['"`]/，三种引号都在里头，
-     *  不划的话头一枚引号会一路吞掉后面的真代码。 */
-    const 码位 = (文: string): Uint8Array => {
-      const 表 = new Uint8Array(文.length)
-      表.fill(1)
-      const 吞串 = (i: number, q: string): number => {
-        表[i] = 0
-        let j = i + 1
-        while (j < 文.length) {
-          const d = 第(文, j)
-          if (d === '\\') { 表[j] = 0; 表[j + 1] = 0; j += 2; continue }
-          if (d === q) { 表[j] = 0; return j }
-          if (d === '\n' && q !== '`') break
-          表[j] = 0
-          j++
-        }
-        return j - 1
-      }
-      let 上 = ''
-      for (let i = 0; i < 文.length; i++) {
-        if (表[i] !== 1) continue
-        const c = 第(文, i)
-        if (c === "'" || c === '"' || c === '`') { 上 = c; i = 吞串(i, c); continue }
-        if (c === '/' && (第(文, i + 1) === '/' || 第(文, i + 1) === '*')) {
-          const 止 = 第(文, i + 1) === '/' ? 文.indexOf('\n', i) : 文.indexOf('*/', i + 2)
-          const 末 = 止 < 0 ? 文.length - 1 : 第(文, i + 1) === '/' ? 止 : 止 + 1
-          for (let j = i; j <= 末 && j < 文.length; j++) 表[j] = 0
-          i = 止 < 0 ? 文.length : 末
-          continue
-        }
-        /* 正则字面量先**探**再划：在同一条里找得到收尾的那枚斜杠，才把整段划成非代码；
-           找不到就说明这一枚斜杠是除号。上一版边写边划，又拿「紧挨着的前一个字符」（空格也算）当记号，
-           于是 `=> /re/` 里那枚斜杠后面一旦探不到收尾，整行的真括号全被划走，配平再也回不到 0。 */
-        if (c === '/' && (上 === '' || '([{,=:&|?;+-*%~^<>'.includes(上))) {
-          let j = i + 1
-          let 类 = false
-          let 闭 = -1
-          while (j < 文.length) {
-            const d = 第(文, j)
-            if (d === '\n') break
-            if (d === '\\') { j += 2; continue }
-            if (类) { if (d === ']') 类 = false } else if (d === '[') 类 = true
-            else if (d === '/') { 闭 = j; break }
-            j++
-          }
-          if (闭 >= 0) {
-            for (let k = i; k <= 闭; k++) 表[k] = 0
-            let k = 闭 + 1
-            while (k < 文.length && /[a-z]/.test(第(文, k))) { 表[k] = 0; k++ }
-            上 = '/'
-            i = k - 1
-            continue
-          }
-        }
-        if (!/\s/.test(c)) 上 = c
-      }
-      return 表
-    }
-    const 跳串 = (文: string, i: number): number => {
-      const q = 第(文, i)
-      let j = i + 1
-      while (j < 文.length) { if (第(文, j) === '\\') { j += 2; continue } if (第(文, j) === q) return j; j++ }
-      return j
-    }
-    /* 从 expect 的那枚左括号起，按深度走到配对的右括号；非代码位置（串身与注释）一概不参与配平 */
-    const 配平 = (文: string, 表: Uint8Array, 开: number): number => {
-      let d = 0
-      for (let j = 开; j < 文.length; j++) {
-        if (表[j] !== 1) continue
-        const c = 第(文, j)
-        if (c === '(') d++
-        else if (c === ')') { d--; if (d === 0) return j }
-      }
-      return -1
-    }
-    /* 主语取第一个顶层逗号之前的那一段；若它只是个标识符，把它那行 const 的右端拉进来一起看 */
-    const 主语段 = (参: string, 文: string): string => {
-      let d = 0, k = 0
-      for (; k < 参.length; k++) {
-        const c = 参[k] ?? ''
-        if (c === "'" || c === '"' || c === '`') { k = 跳串(参, k); continue }
-        if (c === '(' || c === '[' || c === '{') d++
-        else if (c === ')' || c === ']' || c === '}') d--
-        else if (c === ',' && d === 0) break
-      }
-      const 主 = 参.slice(0, k)
-      const id = /^(\w+)(\.length)?$/.exec(主.trim())
-      if (!id) return 主
-      const 名 = id[1]
-      if (!名) return 主
-      const m = new RegExp('(?:const|let)\\s+' + 名 + '\\s*(?::[^=\\n]*)?=\\s*([^\\n]{0,240})').exec(文)
-      return m ? 主 + '=>' + m[1] : 主
-    }
-    /* expect( 收尾之后只容许一枚「说明」实参，再往下必须紧跟链式调用 */
-    const 尾段 = (文: string, 闭: number): string => {
-      let j = 闭 + 1
-      while (j < 文.length && /\s/.test(第(文, j))) j++
-      if (第(文, j) === ',') {
-        j++
-        let d = 0
-        while (j < 文.length) {
-          const c = 第(文, j)
-          if (c === "'" || c === '"' || c === '`') { j = 跳串(文, j) + 1; continue }
-          if (c === '(') d++
-          else if (c === ')') { if (d === 0) break; d-- }
-          j++
-        }
-        j++
-      }
-      return 文.slice(j, j + 120)
-    }
-    const 裸数 = (尾: string): string | null => {
-      const m = /^\s*(?:\.\s*not)?\s*\.\s*(toBe|toHaveLength|toEqual)\(\s*([^)]{0,80}?)\s*\)/.exec(尾)
-      const v = m?.[2]
-      return v && /^\d+$/.test(v) ? v : null
-    }
+    /* 第三十四批：这一条与下面的丙格共用文件级那把 scanner（码位／跳串／配平／主语段／尾段／裸数），
+       定义在本文件抬头；这里只留本条自己的名册字面（TOKENS／像名册）。 */
     const 抄本: string[] = []
     const 瞎处: string[] = []
     const 漏行: string[] = []
@@ -441,7 +482,7 @@ describe('KI-391 派键的来路：不许是名册长度的一份抄本', () => 
           走到.add(行(站))
           const 闭 = 配平(文, 表, 站 + 6)
           if (闭 < 0) { 瞎处.push(`${rel}:${行(站)}`); continue }
-          const 数 = 裸数(尾段(文, 闭))
+          const 数 = 裸数(尾段(文, 闭).段)
           const 主 = 数 ? 主语段(文.slice(站 + 7, 闭), 文) : ''
           i = 闭
           if (!数 || !像名册(主)) continue
@@ -454,6 +495,167 @@ describe('KI-391 派键的来路：不许是名册长度的一份抄本', () => 
     expect(瞎处, `凡走到一处 expect( 却配不出右括号，就是这把尺自己瞎了——那一处之后的半份文件不许静悄悄不看（KI-393 甲）：${瞎处.join('、')}`).toEqual([])
     expect(漏行, `行首那一枚 expect 是本仓尺的写法底色，一处没被走到就是这把尺漏看了那一行（KI-393 甲）：${漏行.join('、')}`).toEqual([])
     expect(抄本, `名册自己的长度被裸整数钉住的每一处都是一份抄本（KI-393 甲）：${抄本.join('、')}`).toEqual([])
+  })
+
+  /* KI-393 丙格（2026-11-23）：这一族的第三种形状第一次是被实况咬到的，不是推演出来的。
+     并轨把 `MENU_OWNERS` 从五格长成六格（别道给「下潜」那一屏加了 `descend`），本道 A1 那条断言当场变红——
+     红的不是名册错了，是那把尺**把名册的内容抄了一遍**：抄本与主人一比，主人涨一格它就少说一格，
+     而它只会报「不等」，说不出少的是哪一格。甲格钉「长度被裸整数钉住」，乙格改「同数改同内容」，
+     这一格管第三面：**内容本身被字面数组重述**。
+     判据现读，一个名字都不写死：
+       主人 = `src/**.ts` 里「整份都是字符串字面量、去重 ≥3 枚」的那些 `const NAME = [...]`；
+       重述 = `expect(主语).toEqual／toStrictEqual／arrayContaining／toContain([字面串…])` 里那枚实参数组，
+              元素全部落在某位主人的值域内、去重 ≥3 枚，且主语顺着本地 const 链走得到那位主人（一跳别名也算走到）。
+     「走得到主人」是判据的要害：场景里手写的三枚动作名走不到主人，那是造数据不是记账；
+     `const 名册 = (CORE as unknown as …).MENU_OWNERS` 那种一跳别名走得到主人，正是今天咬到的形状。
+     反空转：先喂一份合成样本（主人＋一跳别名＋重述）确认这把尺会响，再拿它量全仓——
+     只报「今天 0 处」而不证明会响的尺，甲批踩过一次（原话：短名单看着仍是绿的）。
+     乙格（同日补上）：丙那条腿的要害「主语走得到主人」同时也是它的盲区。
+     `const nav = [...bound].filter(…).sort()` 这一类主语顺着本地 const 链走到的是 `UI_BINDS`，走不到 `UI_NAV`，
+     于是右值把 `UI_NAV` 整份逐枚抄了一遍，丙那把尺当场看不见——今天现读到的那一处正是这个形状。
+     第二条判据不认主语：断言实参位上那枚全字符串字面数组与某位主人的**整份值域逐枚相等**（顺序不论）就报。
+     同长而内容不同的不报（那是巧合）；走得到主人的仍归丙，一处不许被两条尺重复记账。 */
+  it('一份 src 名册的内容不许被字面数组摆在它对面——主语走得到主人的归丙，整份逐枚相等而主语走不到的归乙（KI-393 丙／乙）', () => {
+    const root = fileURLToPath(new URL('../../', import.meta.url))
+    const NUL = String.fromCharCode(0)
+    /** 数组体「整份都是字符串字面量」才算名册的形状：混合的、嵌套的、带计算的都请出去。
+     *  先用一枚 NUL 把串身整段盖掉再看形状——嵌套数组会把括号留在形状里，一比就露出来。 */
+    const 纯串 = (体: string): string[] | null => {
+      const 掩 = 体.replace(/(['"`])(?:\\.|(?!\1)[^\\])*\1/g, NUL)
+      if (!new RegExp('^' + NUL + '(?:\\s*,\\s*' + NUL + ')*\\s*,?\\s*$').test(掩)) return null
+      const 出: string[] = []
+      let 深 = 0, i = 0
+      while (i < 体.length) {
+        const c = 第(体, i)
+        if (c === "'" || c === '"' || c === '`') { const 止 = 跳串(体, i); if (深 === 0) 出.push(体.slice(i + 1, 止)); i = 止 + 1; continue }
+        if (c === '(' || c === '[' || c === '{') 深++
+        else if (c === ')' || c === ']' || c === '}') 深--
+        i++
+      }
+      return new Set(出).size >= 3 ? 出 : null
+    }
+    /** 主人现读：`const NAME = [...]`，要求 `const` 那枚词本身在代码位上（注释里举例的那种不算） */
+    const 抽主 = (文: string): Map<string, string[]> => {
+      const 出 = new Map<string, string[]>()
+      const 表 = 码位(文)
+      const RE = new RegExp('(?:const|let)\\s+(' + ID源 + ')\\s*(?::[^=\\n]{0,160})?=\\s*\\[', 'g')
+      let m: RegExpExecArray | null
+      while ((m = RE.exec(文)) !== null) {
+        if (表[m.index] !== 1) continue
+        const 开 = m.index + m[0].length - 1
+        if (表[开] !== 1) continue
+        const 闭 = 配平(文, 表, 开, '[', ']')
+        if (闭 < 0) continue
+        const 项 = 纯串(文.slice(开 + 1, 闭))
+        const 名 = m[1]
+        if (项 && 名 && !出.has(名)) 出.set(名, [...new Set(项)])
+      }
+      return 出
+    }
+    /** 一份文件里所有「断言把一枚全字符串数组摆在主语对面」的位置，逐处问两句：
+     *  主语走得到哪份主人（丙），以及这枚数组是不是把哪位主人的整份值域逐枚抄了一遍（乙，不看主语）。 */
+    const 查重述 = (
+      rel: string,
+      文: string,
+      主人: Map<string, string[]>
+    ): { 抄: string[]; 整抄: string[]; 瞎: string[]; 漏: string[]; 候选: number } => {
+      const 抄: string[] = [], 整抄: string[] = [], 瞎: string[] = [], 漏: string[] = []
+      const 表 = 码位(文)
+      const 定义 = 本地定义(文)
+      const 行号 = new Int32Array(文.length + 1)
+      let n = 1
+      for (let k = 0; k < 文.length; k++) { 行号[k] = n; if (第(文, k) === '\n') n++ }
+      行号[文.length] = n
+      const 行 = (i: number): number => 行号[i] ?? 1
+      const 走到 = new Set<number>()
+      let 候选 = 0
+      const 链 = /^\s*\.\s*(?:not\.\s*)?(?:toEqual|toStrictEqual|arrayContaining|toContain)\s*\(\s*\[/
+      for (let i = 0; i < 文.length; i++) {
+        if (表[i] !== 1 || !文.startsWith('expect(', i)) continue
+        if (/[\w$.]/.test(第(文, i - 1))) continue
+        const 站 = i
+        走到.add(行(站))
+        const 闭 = 配平(文, 表, 站 + 6)
+        if (闭 < 0) { 瞎.push(`${rel}:${行(站)}（expect 配不出右括号）`); continue }
+        const 尾 = 尾段(文, 闭)
+        const m链 = 链.exec(尾.段)
+        if (!m链) { i = 闭; continue }
+        const 开 = 尾.基 + m链.index + m链[0].length - 1
+        const 闭2 = 配平(文, 表, 开, '[', ']')
+        i = 闭2 < 0 ? 闭 : 闭2
+        if (闭2 < 0) { 瞎.push(`${rel}:${行(站)}（断言里那枚数组配不出右括号）`); continue }
+        const 项 = 纯串(文.slice(开 + 1, 闭2))
+        if (!项) continue
+        候选++
+        const 可达 = 见过(定义, 主语段(文.slice(站 + 7, 闭), 文))
+        for (const [名, 主项] of 主人) {
+          const 摆在对面 = 项.every((e) => 主项.includes(e))
+          const 整份相等 = 项.length === 主项.length && 主项.every((e) => 项.includes(e))
+          if (摆在对面 && 可达.has(名)) {
+            const 差 = 主项.length - 项.length
+            抄.push(`${rel}:${行(站)}（${项.length} 枚字面串摆在 ${名} 对面，主人共 ${主项.length} 格${差 === 0 ? '' : ' ⇒ 这份抄本已经少说 ' + 差 + ' 格'}）`)
+            break
+          }
+          if (整份相等 && !可达.has(名)) 整抄.push(`${rel}:${行(站)}（${项.length} 枚字面串与 ${名} 整份逐枚相等，而主语顺着本地 const 链走不到它——丙那条腿只盯走得到的，这一处正是它看不见的那半）`)
+        }
+      }
+      文.split('\n').forEach((l, k) => { if (/^[ \t]*expect\(/.test(l) && !走到.has(k + 1)) 漏.push(`${rel}:${k + 1}`) })
+      return { 抄, 整抄, 瞎, 漏, 候选 }
+    }
+    /* 反空转那一半先落地：合成一份「主人＋一跳别名＋断言重述」喂进去，必须恰好报出一处。
+       没有这一步，全仓 0 处既可能是「真的干净」，也可能是「这把尺根本走不到断言里」——那正是本仓的「空转的绿」。 */
+    const 合成主人 = new Map<string, string[]>([['ROSTER', ['a', 'b', 'c']]])
+    const 合成文本 = [
+      "const ROSTER = ['a', 'b', 'c'] as const",
+      "it('样本', () => {",
+      '  const 抄本 = ROSTER',
+      "  expect([...抄本].sort()).toEqual(['a', 'b', 'c'])",
+      '  expect(1).toBe(1)',
+      '})',
+      ''
+    ].join('\n')
+    const 合成 = 查重述('合成.ts', 合成文本, 合成主人)
+    expect(合成.抄.length, `合成样本里那一处重述没被抓到 ⇒ 这把尺是空转的绿（候选 ${合成.候选}）：${合成.抄.join('、')}`).toBe(1)
+    /* 乙那一半的反空转：同一条断言，主语换成「本地算出来的派生集合」，丙那条腿当场走不到主人。
+       同一类样本喂两把尺要的就是这个差：丙报 0（「走得到」那个要害还在），乙报 1（补上它看不见的另一半）。 */
+    const 合成乙文本 = [
+      "const ROSTER = ['a', 'b', 'c'] as const",
+      "it('样本', () => {",
+      "  const 集 = new Set(['a', 'b', 'c', 'x'].filter((i) => i !== 'x'))",
+      '  const 派生 = [...集].sort()',
+      "  expect(派生).toEqual(['a', 'b', 'c'])",
+      '})',
+      ''
+    ].join('\n')
+    const 合成乙 = 查重述('合成乙.ts', 合成乙文本, 合成主人)
+    expect(合成乙.抄.length, `主语走不到主人那一处也被丙那条腿算进来了 ⇒「走得到」这个要害丢了，场景数据会跟着一起红（合成乙：${合成乙.抄.join('、')}）`).toBe(0)
+    expect(合成乙.整抄.length, `主语走不到主人、右值却把 ROSTER 整份逐枚抄了一遍，那一处没被乙这条腿抓到 ⇒ 这把尺是空转的绿（候选 ${合成乙.候选}）：${合成乙.整抄.join('、')}`).toBe(1)
+    /* 真仓两趟：先把 src 里的主人收齐（主人只认 src——测试与脚本里那种本地数组是场景，不是账），
+       再拿这份值域去量 tests／scripts／src 每一处断言实参位。 */
+    const 主人 = new Map<string, string[]>()
+    const 抄: string[] = [], 整抄: string[] = [], 瞎: string[] = [], 漏: string[] = []
+    let 候选 = 0
+    const 走 = (dir: string, 是主人档: boolean): void => {
+      for (const e of readdirSync(`${root}${dir}`, { withFileTypes: true })) {
+        const rel = `${dir}/${e.name}`
+        if (e.isDirectory()) { 走(rel, 是主人档); continue }
+        if (!/\.ts$/.test(e.name)) continue
+        const 文 = readFileSync(`${root}${rel}`, 'utf8')
+        if (是主人档) { for (const [名, 项] of 抽主(文)) if (!主人.has(名)) 主人.set(名, 项); continue }
+        if (!/expect\s*\(/.test(文)) continue
+        const 报 = 查重述(rel, 文, 主人)
+        抄.push(...报.抄); 整抄.push(...报.整抄); 瞎.push(...报.瞎); 漏.push(...报.漏); 候选 += 报.候选
+      }
+    }
+    走('src', true)
+    const 主人份 = 主人.size
+    expect(主人份, 'src 里一份 ≥3 枚的全字符串名册都没读到 ⇒ 这把尺连主人是谁都不知道，判据当场作废').toBeGreaterThan(0)
+    for (const d of ['tests', 'scripts', 'src']) 走(d, false)
+    expect(候选, '全仓一处「断言实参位上的全字符串数组」都没走到 ⇒ 这一条是空跑的绿').toBeGreaterThan(0)
+    expect(瞎, `凡走到一处 expect( 或断言里那枚数组却配不出右括号，就是这把尺自己瞎了，它后面的半份文件不许静悄悄不看（KI-393 丙）：${瞎.join('、')}`).toEqual([])
+    expect(漏, `行首那一枚 expect 是本仓尺的写法底色，一处没被走到就是这把尺漏看了那一行（KI-393 丙）：${漏.join('、')}`).toEqual([])
+    expect(抄, `名册的内容被字面数组重述回主人对面，每一处都是那份名册的第二份账——主人涨一格它就少说一格，且只报不等（KI-393 丙）：${抄.join('、')}`).toEqual([])
+    expect(整抄, `主语走不到主人不是免票：整份名册被字面数组逐枚抄在断言右值里，主人涨一格那一份就少说一格，而丙那条腿当场看不见它（KI-393 乙）：${整抄.join('、')}`).toEqual([])
   })
 })
 

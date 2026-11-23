@@ -82,9 +82,13 @@ const mainLive = live(mainSrc)
 const 名册 = (CORE as unknown as Record<string, unknown>).MENU_OWNERS as readonly string[] | undefined
 
 describe('KI-390 乙案：第五格主人在 core 那一侧（A 组）', () => {
-  it('core 把五格主人作为**一份可枚举名册**交出来，第五格叫 `cinematic`', () => {
+  it('core 把主人作为**一份可枚举名册**交出来，过场那一格 `cinematic` 在名册上', () => {
     expect(名册, 'core 没有 `MENU_OWNERS`：值域今天只活在 `MenuOwner` 那句字面量里，别人没法按它循环').toBeDefined()
-    expect([...(名册 ?? [])].sort(), '名册应是五格，且第五格是 `cinematic`').toEqual(['cinematic', 'dialogue', 'map', 'panel', 'title'])
+    /* 这一条原来把五格内容抄成一份字面数组（`['cinematic','dialogue','map','panel','title']`），
+       并轨给名册加了第六格 `descend` 就当场变红——红的这一次是抄本的正确答案，但它说不出少的是哪一格。
+       抄本一族第三种形状（KI-393 丙）由这一处立起：不钉内容，只钉「这一格在不在」与「不许重格」。 */
+    expect(名册 ?? [], '`cinematic` 不在可枚举名册里 ⇒ 过场那一格只剩类型、没有能循环的那份账').toContain('cinematic')
+    expect(new Set(名册 ?? []).size, `名册不许有两格同名：${(名册 ?? []).join('、')}`).toBe((名册 ?? []).length)
   })
 
   it('`MenuOwner` 由名册派生，不再另抄一遍字面量（词表只有一份账）', () => {

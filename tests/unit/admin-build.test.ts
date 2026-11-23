@@ -32,7 +32,10 @@ describe('admin · 研发状态 Build Observatory（KI-630）', () => {
     expect(js).toContain('raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json')
     expect(js).toContain('api.github.com/repos/xiaodernan/caesura/actions/runs?branch=master&per_page=8')
     expect(js).toContain('renderBuild()')
-    expect(js).toContain("renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderBuild()")
+    // 初始化调用链含这些渲染函数（KI-742：并行加 renderRouter 后不再要求严格相邻，改为各自都在链上）
+    for (const fn of ['renderAiCommitted()', 'hydrateAiLive()', 'renderStateGraph()', 'renderBuild()']) {
+      expect(js, `初始化链缺 ${fn}`).toContain(fn)
+    }
     expect(js).toContain('build-error')
     expect(js).toContain('build-runs')
   })

@@ -1,4 +1,5 @@
-import { t, getLang } from '@/i18n/Lang'
+import { t, getLang, nextLang, setLang } from '@/i18n/Lang'
+import { shouldCycleLang, LANG_NAME_KEY } from '@/i18n/LangKey'
 import { bus } from '@/core/EventBus'
 import { Vector3 } from 'three'
 import { GameTime, TICK_DT, TICK_HZ } from '@/core/Time'
@@ -1345,6 +1346,27 @@ if (freshBoot) {
  * 只有拿得到实例才读得着——`muffleHz`（消音那条低通的实时频率，斜坡走到哪一格）与 `dispose()`
  * （装配层的收尾口；测试与实机从此共用同一个，`AudioEngine` 因此不是一只没有生产消费方的 API）。
  */
+/**
+ * KI-742：世界里的语言键（`L`）。判据在 `i18n/LangKey.ts` 的那条纯函数里，这里只做三件事：
+ * 现读三个现场条件 → 该切就切（`nextLang` 三态循环：简 → 繁 → EN）→ 用**新语言**说一句切到了哪。
+ *
+ * 为什么面板开着时不切：面板的每一行都是建屏那一刻取的词，就地换语言会让半屏旧字半屏新字
+ * ——中英夹杂正是 §八 要避免的那一面。收起面板再按一次，一行都不需要重画。
+ * 为什么这枚键不塞进 `DEFAULT_BINDS`：它不是玩法动作（`ACTION_LABELS` 要求每格都有中文名、
+ * 操作页要求每格都有一行），也不是菜单意图（菜单关着时照样得能按）——它是**页面级热键**，
+ * 判据与真值表在 `LangKey.ts`，守卫在 `tests/unit/lang-key.test.ts`。
+ */
+window.addEventListener('keydown', (e) => {
+  const el = document.activeElement as HTMLElement | null
+  const inField = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)
+  if (!shouldCycleLang(e, { overlayOpen: overlay !== null, capturing: input.isCapturing, inField })) return
+  e.preventDefault()
+  const lang = setLang(nextLang(getLang()))
+  bus.emit('ui.notify', { text: t('ui.notify.langSwitched', { name: t(LANG_NAME_KEY[lang]) }), kind: 'info' })
+  // 给读屏与浏览器一份当前语言（`zh-TW` 用标准子标签 `zh-Hant`，不是 `zh-TW` 以外的自造拼写）
+  document.documentElement.lang = lang === 'en' ? 'en' : lang === 'zh-TW' ? 'zh-Hant' : 'zh-CN'
+})
+
 ;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, lights, player, ai, combat, lock, rig, bus, streaming, surface, greybox, wallGreybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, saveRoster, checkpoints, rpg, settlement, panel, setPanelOpen, mapUi, setMapOpen, descendRun, descendPanel, setDescendOpen, quests, dialogueEngine, dialogueBox, openDialogue, debugPanels, debugWires, refreshRpg, observe, saveNow: () => saves.save('autosave'), get title() { return title } }
 
 document.getElementById('boot')!.style.display = 'none'
