@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "e8a6e347f82cd445aaa8a49dea1862e4bd8a1196",
+  "head": "b37f2d44b424b33811a7290b9ad799f9da9c9c03",
   "branch": "master",
-  "subject": "merge origin/master: integrate parallel KI-742+ work; resolve test conflicts (keep KI-393 meta-rule compliant)",
-  "date": "2026-11-23T13:35:20+08:00",
+  "subject": "chore(status): re-embed site-latest.json",
+  "date": "2026-11-23T05:37:17Z",
   "kv": {
     "KI.rows": 661,
     "KI.Implemented": 484,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/e8a6e347f82cd445aaa8a49dea1862e4bd8a1196",
+    "url": "https://github.com/xiaodernan/caesura/commit/b37f2d44b424b33811a7290b9ad799f9da9c9c03",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
