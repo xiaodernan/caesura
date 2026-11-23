@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>空着的一格 / The One Left Empty — CAESURA · 余响集 · 第九十篇</title>
+<meta name="description" content="回廊钟东墙有四十七格灯龛，四十六盏亮着，最末一格空着：没有钩子，没有灯座，也没有烟痕。来过的人往里面放盐、铜扣、灯芯，第二天都不在了——那一格不存东西。她把手伸进去，什么也没有摸到；翻开薄簿，在末行写下：第四十七格，空。 · 双语对照 · 零网络 / The ninetieth piece of The Aftermath: forty-seven lamp niches on the east wall of the Arcade, forty-six lit, the last one empty — no hook, no socket, no soot. People leave salt, buttons, wicks; by morning nothing remains. She reaches in and touches nothing, then writes on the last line of the thin ledger: the forty-seventh niche, empty. Bilingual, offline." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🕯️</text></svg>">
+<style>
+  :root {
+    --gold: #e8c58a;
+    --gold-soft: rgba(232,197,138,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(30,22,14,.72);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#080706; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(232,197,138,.13), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(110,80,52,.22), transparent 62%),
+      radial-gradient(620px 420px at 14% 102%, rgba(150,120,90,.08), transparent 60%),
+      #080706;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(232,197,138,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(232,197,138,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(232,197,138,.22); box-shadow:0 0 16px rgba(232,197,138,.25); }
+
+  [data-lang="zh-TW"] .en-copy { display:none !important; }
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.2rem, 8vw, 3.6rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #e8c58a 28%, #c39a5e 58%, #77572f 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(232,197,138,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.8em; color:rgba(232,197,138,.55); font-size:.9rem; }
+  article p.coda { text-indent:0; text-align:center; color:var(--gold); font-size:.95rem; letter-spacing:.08em; margin-bottom:.9em; }
+  article p.coda:last-child { margin-top:1.8em; color:rgba(243,237,224,.7); font-size:.9rem; font-style:italic; }
+
+  .note { max-width:760px; margin:26px auto 0; font-size:.74rem; line-height:1.9; color:rgba(243,237,224,.42); text-align:center; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; }
+
+  footer { margin-top:44px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 22px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:1rem; line-height:1.96; } header.hero { padding:40px 8px 22px; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/the-wind-writes-on-the-ash/"><span class="zh-copy">前篇《风在灰上写字》</span><span class="en-copy">Prev · “The Wind Writes on the Ash”</span></a>
+      <a href="/caesura/story/atlas/"><span class="zh-copy">余响索引</span><span class="en-copy">Motif Atlas</span></a>
+      <a href="/caesura/story/anthology/"><span class="zh-copy">余响集</span><span class="en-copy">The Aftermath</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <a href="/caesura/tutorial/"><span class="zh-copy">教程</span><span class="en-copy">Tutorial</span></a>
+      <a href="/caesura/"><span class="zh-copy">游戏</span><span class="en-copy">Game</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>余响集</b> · 第九十篇</p>
+    <p class="kicker en-copy">Short story · <b>The Aftermath</b> · No. 90</p>
+    <h1 class="zh-copy">空着的一格</h1>
+    <h1 class="en-copy">The One Left Empty</h1>
+    <p class="subtitle zh-copy">回廊钟第39年 · 东墙四十七格灯龛 · 一盏留给没有灯的人</p>
+    <p class="subtitle en-copy">The 39th year of the Arcade — forty-seven lamp niches on the east wall, one kept for those without a lamp</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 6 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 零网络</p>
+    <p class="meta en-copy">about 6 minutes · same world as the <a href="/caesura/codex/">codex</a> · fully offline</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+<p>回廊钟的东墙有一排灯龛，四十七格，一格一盏铜灯。阿汐数过很多回：四十六盏亮着，最末一格空着。</p>
+<p>那一格不是灯坏了。里面没有钩子，没有灯座，连烟熏的痕迹也没有——好像砌墙的人砌到那里，忽然停下来，把这一格留给了墙自己。</p>
+
+<div class="beat">· · ·</div>
+
+<p>来的人不肯让一格空着。有人放一粒盐进去，有人放一枚铜扣，有人把自己路上捡的半截灯芯搁在格口。第二天再看，东西都不在了。不是被谁拿走：盐化进石头，铜扣落进墙缝，灯芯被穿堂风带走。那一格不存东西，也没打算存。</p>
+<p>守灯的老人说，当年墙砌歪了一寸，这一格跟着歪，挂不住灯。后来没人来补，就让它空着。他说：空着的那一格比别的格干净，也比别的格亮——因为它不挡光。</p>
+
+<div class="beat">· · ·</div>
+
+<p>阿汐把手伸进去。里面没有风，没有凉，也没有回声。她的手在黑暗里待了一会儿，什么也没有摸到；退出来时，指尖上连灰都没有沾。</p>
+<p>她忽然明白：这一格不是忘了装灯，它是让整面墙还能被数下去的那一格。数到四十六，总要有个地方停一停。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她翻开薄簿，把这一页的最后一行留给它：第四十七格，空。写完她没有合上簿，等墨自己干。墨干得很慢，像一个不肯马上被记下的答案。</p>
+<p>第二天，一个赶路的人在那一格前站了很久。他说他一路上都在数灯，数到第四十六盏，就不知道再往前该往哪里走了；看见这一格空着，他反而知道该往哪里去了。</p>
+<p>阿汐没有把灯补上。她把小扫帚靠在墙边，让那一格继续空着。灯是给走路的人看的；空着的那一格，是给数灯的人留的。</p>
+
+<p class="coda">墙要留一格空着，数才数得下去。</p>
+<p class="coda">不是所有的空都要填满——有些空格，是给走到这里的人留的。</p>
+<p class="coda">止音纪元没有结束。它只是又多了一格空——盐在门槛上，薄簿合着，船停着，风来过，灯都亮着，只有一格留给没有灯的人——她也很好。</p>
+    </div>
+    <div class="en-copy">
+<p>On the east wall of the Arcade of Echoes runs a row of lamp niches — forty-seven of them, one copper lamp apiece. Axi has counted them many times: forty-six are lit, and the last one is empty.</p>
+<p>It is not that the lamp there broke. The niche has no hook, no socket, not even a soot stain — as if the builder had climbed to that spot, stopped, and left this one niche to the wall itself.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Visitors cannot bear to leave a single niche empty. Someone puts in a grain of salt, someone a copper button, someone half a wick picked up along the road. By the next day nothing is there. No one has taken it: the salt melts into the stone, the button drops into the seam, the wick is carried off by the through-draft. That niche keeps nothing, and never meant to.</p>
+<p>The old lamplighter says the wall was laid an inch crooked, and this niche went with it, so no lamp would hang straight. No one came to mend it; they let it stay empty. He says: the empty one is cleaner than the others, and brighter too — because it does not block the light.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Axi puts her hand inside. No wind there, no cold, no echo. Her hand stays in the dark a while and touches nothing; when she draws it out, not even ash clings to her fingertips.</p>
+<p>She understands, suddenly: this niche did not forget a lamp — it is the one that lets the whole wall still be counted. When you have counted to forty-six, there must be a place to stop.</p>
+
+<div class="beat">· · ·</div>
+
+<p>She opens the thin ledger and gives the last line of the page to it: the forty-seventh niche, empty. She does not close the book when she has written; she waits for the ink to dry. It dries slowly, like an answer that refuses to be recorded at once.</p>
+<p>The next day a traveler stands a long while before that niche. He says he had been counting the lamps all along the road, and when he reached the forty-sixth he no longer knew which way to go; seeing this one empty, he knew.</p>
+<p>Axi does not fill it with a lamp. She leans the small broom against the wall and lets the niche stay empty. Lamps are for those who walk; the empty one is kept for those who count.</p>
+
+<p class="coda">A wall must leave one niche empty, or the counting cannot go on.</p>
+<p class="coda">Not every emptiness needs filling — some empty places are kept for whoever arrives here.</p>
+<p class="coda">The age of hush has not ended. It has only gained one more empty niche — the salt on the threshold, the thin ledger shut, the boat still, the wind having passed, every lamp burning, one niche kept for those who carry no lamp — and she was well too.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">本篇为《余响集》双语对照 · 人工闸定稿 · 零网络 · 与<a href="/caesura/codex/">世界谱</a>同源世界观。<a href="/caesura/story/anthology/">全集：《余响集》</a> · <a href="/caesura/story/atlas/">母题检索：余响索引</a></span>
+    <span class="en-copy">“The Aftermath,” bilingual, offline, human-gated — same world as the <a href="/caesura/codex/">codex</a>. <a href="/caesura/story/anthology/">All stories</a> · <a href="/caesura/story/atlas/">Motif Atlas</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/the-chip-on-the-rim/">篇八十七 · 碗沿的缺口</a> · <a href="/caesura/story/the-wind-at-the-seam/">篇八十八 · 门缝的风</a> · <a href="/caesura/story/the-wind-writes-on-the-ash/">篇八十九 · 风在灰上写字</a> · <a href="/caesura/story/the-one-left-empty/">篇九十 · 空着的一格</a> · <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/story/atlas/">余响索引</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/the-chip-on-the-rim/">No. 87 · The Chip on the Rim</a> · <a href="/caesura/story/the-wind-at-the-seam/">No. 88 · The Wind at the Seam</a> · <a href="/caesura/story/the-wind-writes-on-the-ash/">No. 89 · The Wind Writes on the Ash</a> · <a href="/caesura/story/the-one-left-empty/">No. 90 · The One Left Empty</a> · <a href="/caesura/story/anthology/">All stories</a> · <a href="/caesura/story/atlas/">Motif Atlas</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'en' ? 'en-US' : (lang === 'zh-TW' ? 'zh-TW' : 'zh-CN'));
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+    if (window.__caesuraZhTW) {
+      if (lang === 'zh-TW' && window.__caesuraZhTW.applyToDocument) window.__caesuraZhTW.applyToDocument();
+      else if (lang === 'zh' && window.__caesuraZhTW.restoreOriginals) window.__caesuraZhTW.restoreOriginals();
+    }
+    btn.textContent = lang === 'zh' ? '繁體' : (lang === 'zh-TW' ? 'EN' : '简体');
+  }
+  if (btn) btn.addEventListener('click', function () {
+    var cur = root.getAttribute('data-lang'); apply(cur === 'zh' ? 'zh-TW' : (cur === 'zh-TW' ? 'en' : 'zh'));
+  });
+  apply(saved === 'en' || saved === 'zh-TW' ? saved : 'zh');
+})();
+</script>
+<script defer src="../../tracker.js"></script>
+<script defer src="/caesura/zh-tw-converter.js"></script>
+<script defer src="/caesura/read-progress.js"></script>
+</body>
+</html>

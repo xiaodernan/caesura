@@ -49,7 +49,7 @@ export function storySlugs() {
 
 export function publicPageList() {
   const slugs = storySlugs().filter(Boolean)
-  const pages = ['/caesura/', '/caesura/story/anthology/', '/caesura/codex/', '/caesura/tutorial/', '/caesura/console/', '/caesura/cast/', '/caesura/admin/']
+  const pages = ['/caesura/', '/caesura/story/anthology/', '/caesura/story/atlas/', '/caesura/codex/', '/caesura/tutorial/', '/caesura/console/', '/caesura/cast/', '/caesura/admin/']
   for (const s of slugs) pages.push(`/caesura/story/${s}/`)
   return [...new Set(pages)]
 }
@@ -79,6 +79,7 @@ export const pick = (rng, xs) => xs[Math.floor(rng() * xs.length)]
 const markerFor = (path) => {
   if (path === '/caesura/') return ['止音纪元', 'CÆSURA']
   if (path.includes('/anthology/')) return ['余响集', 'The Aftermath']
+  if (path.includes('/story/atlas/')) return ['余响索引', 'Motif Atlas']
   if (path.includes('/story/')) return ['余响集', 'The Aftermath']
   if (path.includes('/codex/')) return ['世界谱', 'Codex']
   if (path.includes('/tutorial/')) return ['教程', 'Tutorial']

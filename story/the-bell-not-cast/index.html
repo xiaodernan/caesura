@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>未铸之钟 / The Bell Not Cast — CAESURA · 余响集 · 第九十一篇</title>
+<meta name="description" content="回廊钟东墙外的缓坡下是铸钟坊：坑里倒扣着一只三十九年没有开模的泥壳，浇口只有一个拳头大，铜水从没进来过。她贴耳去听——里面不是空的，是有形状的空。翻开薄簿，她写下：第九十一口，未铸；又添了两个字：已在。 · 双语对照 · 零网络 / The ninety-first piece of The Aftermath: below the Arcade lies the casting yard, and in its pit a clay mould has waited thirty-nine years, never opened. She puts her ear to the pour gate — not empty, but an emptiness with a shape. In the thin ledger she writes: the ninety-first bell, not cast; then adds two words: already here. Bilingual, offline." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔔</text></svg>">
+<style>
+  :root {
+    --gold: #e8c58a;
+    --gold-soft: rgba(232,197,138,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(30,22,14,.72);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#080706; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(232,197,138,.13), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(110,80,52,.22), transparent 62%),
+      radial-gradient(620px 420px at 14% 102%, rgba(150,120,90,.08), transparent 60%),
+      #080706;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(232,197,138,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(232,197,138,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(232,197,138,.22); box-shadow:0 0 16px rgba(232,197,138,.25); }
+
+  [data-lang="zh-TW"] .en-copy { display:none !important; }
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.2rem, 8vw, 3.6rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #e8c58a 28%, #c39a5e 58%, #77572f 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(232,197,138,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.8em; color:rgba(232,197,138,.55); font-size:.9rem; }
+  article p.coda { text-indent:0; text-align:center; color:var(--gold); font-size:.95rem; letter-spacing:.08em; margin-bottom:.9em; }
+  article p.coda:last-child { margin-top:1.8em; color:rgba(243,237,224,.7); font-size:.9rem; font-style:italic; }
+
+  .note { max-width:760px; margin:26px auto 0; font-size:.74rem; line-height:1.9; color:rgba(243,237,224,.42); text-align:center; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; }
+
+  footer { margin-top:44px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 22px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:1rem; line-height:1.96; } header.hero { padding:40px 8px 22px; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/the-one-left-empty/"><span class="zh-copy">前篇《空着的一格》</span><span class="en-copy">Prev · “The One Left Empty”</span></a>
+      <a href="/caesura/story/atlas/"><span class="zh-copy">余响索引</span><span class="en-copy">Motif Atlas</span></a>
+      <a href="/caesura/story/anthology/"><span class="zh-copy">余响集</span><span class="en-copy">The Aftermath</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <a href="/caesura/tutorial/"><span class="zh-copy">教程</span><span class="en-copy">Tutorial</span></a>
+      <a href="/caesura/"><span class="zh-copy">游戏</span><span class="en-copy">Game</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>余响集</b> · 第九十一篇</p>
+    <p class="kicker en-copy">Short story · <b>The Aftermath</b> · No. 91</p>
+    <h1 class="zh-copy">未铸之钟</h1>
+    <h1 class="en-copy">The Bell Not Cast</h1>
+    <p class="subtitle zh-copy">回廊钟第39年 · 铸钟坊 · 一口没有浇铜的钟</p>
+    <p class="subtitle en-copy">The 39th year of the Arcade — the casting yard, and a bell that was never poured</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 6 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 零网络</p>
+    <p class="meta en-copy">about 6 minutes · same world as the <a href="/caesura/codex/">codex</a> · fully offline</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+<p>回廊钟东墙外有一道缓坡，坡下是铸钟坊。坊里没有钟，只有一只倒扣在坑里的模。</p>
+<p>模是两只泥壳合起来的，外头箍着三圈铁箍，接缝处抹了封泥。三十九年前，最后一口钟就是在这个坑里浇出来的；浇完，匠人把下一只模也做好了，却再没有开炉。</p>
+
+<div class="beat">· · ·</div>
+
+<p>阿汐小时候来过一次。她问带她来的老人：这只模里是什么？老人说：是一口钟。她又问：那为什么不浇？老人说：那时候大家数过了，钟够了；再多一口，数就乱了。</p>
+<p>模就这么留在坑里。铸钟坊的炉子却一直没熄——不浇铜，只压着一层小火。守坊人说，模最怕冷：一冷，泥壳自己就会裂；裂了，就什么也留不住。</p>
+
+<div class="beat">· · ·</div>
+
+<p>阿汐蹲下去，把耳朵贴在浇口上。浇口只有一个拳头大，是铜水进来的地方，边沿还留着一圈当年没擦净的黑。</p>
+<p>里面没有声音。不是空屋子的那种没有声音，也不是死人的那种；是一种<strong>有形状的没有声音</strong>——像一个人把一句话含在嘴里，含了三十九年，连气都按着原来的样子。</p>
+
+<div class="beat">· · ·</div>
+
+<p>守坊人走过来，把手掌放在泥壳上，说：钟把声音收在铜里，模把声音收在空里。铜里的那一口，敲了就响；空里的这一口，谁也敲不着。</p>
+<p>阿汐问：那它算不算一口钟？</p>
+<p>守坊人没有答。他弯腰把炉门开了一线，火苗往里缩了一下，又慢慢立起来。他说：你听。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她听了很久。坡上有人在关窗，一只碗落在石板上，没有碎；风从坡上下来，绕过坊子，从另一头走了。这些都是外面的声音。</p>
+<p>里面那一层，始终没有动静。可她忽然发觉，自己一直在按着一个拍子呼吸——三拍，一停。和模的接缝一样：两只泥壳，合在一条线上，中间那道缝，正好把一口气分成两半。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她翻开薄簿，在末页写下：第九十一口，未铸。</p>
+<p>写完看了一会儿，又添了两个字：已在。</p>
+<p>守坊人看见了，什么也没说，只把封泥重新按了按，让那道接缝合得更严一点。炉子压着小火，泥壳里那口没有铜的钟，仍旧含着它那一口气。</p>
+
+<p class="coda">不是所有的钟都要浇出来。</p>
+<p class="coda">有的钟把铜省下来，只留下一个钟形的空——你贴近去听，听见的是自己那口气，在钟里绕了一圈，没有散。</p>
+<p class="coda">止音纪元没有结束。它只是又多了一口钟——没有铜，没有舌，没有声音；炉子压着小火，模合着，接缝上那道线还在，等一个不打算敲的人来听。</p>
+    </div>
+    <div class="en-copy">
+<p>Below the east wall of the Arcade of Echoes the ground slopes down to a casting yard. There are no bells in the yard — only a mould, turned upside down in its pit.</p>
+<p>The mould is two clay shells closed together, bound with three iron hoops, the seam sealed with clay. Thirty-nine years ago the last bell of the Arcade was poured in this pit. When it was done, the founder built the next mould too, and then never opened the furnace again.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Axi came here once as a child. She asked the old man who brought her: what is inside this mould? A bell, he said. Then why wasn’t it poured? he said: because by then we had counted them, and the bells were enough. One more, and the count would go wrong.</p>
+<p>So the mould stayed in its pit. But the furnace in the casting yard was never put out — no copper in it, only a low fire banked under the ash. The yard-keeper says a mould fears the cold: once it goes cold, the clay shells crack by themselves, and then nothing is kept at all.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Axi crouches and puts her ear to the pour gate. The gate is no bigger than a fist — the way the copper was meant to come in — and its rim still carries a ring of black no one wiped away that year.</p>
+<p>There is no sound inside. Not the no-sound of an empty room, nor the no-sound of the dead; it is a <strong>no-sound with a shape</strong> — like a person holding a sentence in the mouth for thirty-nine years, holding even the breath in its original shape.</p>
+
+<div class="beat">· · ·</div>
+
+<p>The yard-keeper comes over and lays his palm on the clay shell. A bell, he says, keeps its sound in the bronze; a mould keeps its sound in the emptiness. The one in bronze rings when you strike it. The one in the emptiness, no one can strike.</p>
+<p>Axi asks: then is it a bell or not?</p>
+<p>He does not answer. He bends, opens the furnace door a finger’s width; the flame shrinks back, then slowly stands up again. He says: listen.</p>
+
+<div class="beat">· · ·</div>
+
+<p>She listens a long while. Up the slope someone is closing a window; a bowl falls on the flagstones and does not break; the wind comes down the slope, goes around the yard, and leaves by the other side. All of that is outside sound.</p>
+<p>The layer inside never stirs. But she suddenly notices that she has been breathing to a beat — three, then a pause. The same as the seam of the mould: two clay shells closed on a single line, and the seam between them splits one breath neatly in two.</p>
+
+<div class="beat">· · ·</div>
+
+<p>She opens the thin ledger and writes on the last page: the ninety-first bell, not cast.</p>
+<p>She looks at it a while, then adds two words: already here.</p>
+<p>The yard-keeper sees it and says nothing. He only presses the sealing clay down again, so the seam closes a little tighter. The furnace keeps its low fire; the bell with no bronze in it keeps holding its one breath.</p>
+
+<p class="coda">Not every bell has to be poured.</p>
+<p class="coda">Some bells spare the copper and leave only a bell-shaped emptiness — lean in and listen, and what you hear is your own breath going once around inside it, not scattering.</p>
+<p class="coda">The age of hush has not ended. It has only gained one more bell — no bronze, no clapper, no sound; the furnace banked low, the mould closed, the line of the seam still there, waiting for someone who does not mean to strike it.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">本篇为《余响集》双语对照 · 人工闸定稿 · 零网络 · 与<a href="/caesura/codex/">世界谱</a>同源世界观。<a href="/caesura/story/anthology/">全集：《余响集》</a> · <a href="/caesura/story/atlas/">母题检索：余响索引</a></span>
+    <span class="en-copy">“The Aftermath,” bilingual, offline, human-gated — same world as the <a href="/caesura/codex/">codex</a>. <a href="/caesura/story/anthology/">All stories</a> · <a href="/caesura/story/atlas/">Motif Atlas</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/the-wind-at-the-seam/">篇八十八 · 门缝的风</a> · <a href="/caesura/story/the-wind-writes-on-the-ash/">篇八十九 · 风在灰上写字</a> · <a href="/caesura/story/the-one-left-empty/">篇九十 · 空着的一格</a> · <a href="/caesura/story/the-bell-not-cast/">篇九十一 · 未铸之钟</a> · <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/story/atlas/">余响索引</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/the-wind-at-the-seam/">No. 88 · The Wind at the Seam</a> · <a href="/caesura/story/the-wind-writes-on-the-ash/">No. 89 · The Wind Writes on the Ash</a> · <a href="/caesura/story/the-one-left-empty/">No. 90 · The One Left Empty</a> · <a href="/caesura/story/the-bell-not-cast/">No. 91 · The Bell Not Cast</a> · <a href="/caesura/story/anthology/">All stories</a> · <a href="/caesura/story/atlas/">Motif Atlas</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'en' ? 'en-US' : (lang === 'zh-TW' ? 'zh-TW' : 'zh-CN'));
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+    if (window.__caesuraZhTW) {
+      if (lang === 'zh-TW' && window.__caesuraZhTW.applyToDocument) window.__caesuraZhTW.applyToDocument();
+      else if (lang === 'zh' && window.__caesuraZhTW.restoreOriginals) window.__caesuraZhTW.restoreOriginals();
+    }
+    btn.textContent = lang === 'zh' ? '繁體' : (lang === 'zh-TW' ? 'EN' : '简体');
+  }
+  if (btn) btn.addEventListener('click', function () {
+    var cur = root.getAttribute('data-lang'); apply(cur === 'zh' ? 'zh-TW' : (cur === 'zh-TW' ? 'en' : 'zh'));
+  });
+  apply(saved === 'en' || saved === 'zh-TW' ? saved : 'zh');
+})();
+</script>
+<script defer src="../../tracker.js"></script>
+<script defer src="/caesura/zh-tw-converter.js"></script>
+<script defer src="/caesura/read-progress.js"></script>
+</body>
+</html>

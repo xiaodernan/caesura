@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>风在灰上写字 / The Wind Writes on the Ash — CAESURA · 余响集 · 第八十九篇</title>
+<meta name="description" content="火塘冷了七年，灰没人扫——灰底下压着最后一块没烧完的柴。起风那天，风贴着灰面走，把最上面一层推成一条细线：线每天换一个方向，像在替风记账。 · 双语对照 · 零网络 / The eighty-ninth piece of The Aftermath: the hearth has been cold seven years and nobody sweeps the ash; one windy day the wind walks low and draws a thin line on it, a line that changes direction every day, as if keeping accounts for the wind. Bilingual, offline." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔥</text></svg>">
+<style>
+  :root {
+    --gold: #e8c58a;
+    --gold-soft: rgba(232,197,138,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(30,22,14,.72);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#080706; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(232,197,138,.13), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(110,80,52,.22), transparent 62%),
+      radial-gradient(620px 420px at 14% 102%, rgba(150,120,90,.08), transparent 60%),
+      #080706;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(232,197,138,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(232,197,138,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(232,197,138,.22); box-shadow:0 0 16px rgba(232,197,138,.25); }
+
+  [data-lang="zh-TW"] .en-copy { display:none !important; }
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.2rem, 8vw, 3.6rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #e8c58a 28%, #c39a5e 58%, #77572f 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(232,197,138,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.8em; color:rgba(232,197,138,.55); font-size:.9rem; }
+  article p.coda { text-indent:0; text-align:center; color:var(--gold); font-size:.95rem; letter-spacing:.08em; margin-bottom:.9em; }
+  article p.coda:last-child { margin-top:1.8em; color:rgba(243,237,224,.7); font-size:.9rem; font-style:italic; }
+
+  .note { max-width:760px; margin:26px auto 0; font-size:.74rem; line-height:1.9; color:rgba(243,237,224,.42); text-align:center; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; }
+
+  footer { margin-top:44px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 22px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:1rem; line-height:1.96; } header.hero { padding:40px 8px 22px; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/the-wind-at-the-seam/"><span class="zh-copy">前篇《门缝的风》</span><span class="en-copy">Prev · “The Wind at the Seam”</span></a>
+      <a href="/caesura/story/atlas/"><span class="zh-copy">余响索引</span><span class="en-copy">Motif Atlas</span></a>
+      <a href="/caesura/story/anthology/"><span class="zh-copy">余响集</span><span class="en-copy">The Aftermath</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <a href="/caesura/tutorial/"><span class="zh-copy">教程</span><span class="en-copy">Tutorial</span></a>
+      <a href="/caesura/"><span class="zh-copy">游戏</span><span class="en-copy">Game</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>余响集</b> · 第八十九篇</p>
+    <p class="kicker en-copy">Short story · <b>The Aftermath</b> · No. 89</p>
+    <h1 class="zh-copy">风在灰上写字</h1>
+    <h1 class="en-copy">The Wind Writes on the Ash</h1>
+    <p class="subtitle zh-copy">回廊钟第38年 · 冷了的火塘 · 一条每天都在换方向的线</p>
+    <p class="subtitle en-copy">The 38th year of the Arcade — a cold hearth, a line that changes direction every day</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 6 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 零网络</p>
+    <p class="meta en-copy">about 6 minutes · same world as the <a href="/caesura/codex/">codex</a> · fully offline</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+<p>火塘冷了七年。灰还在，没人扫——不是懒，是灰底下压着最后一块没有烧完的柴，谁也不想先动它。灰面平得像一张没有写字的纸。</p>
+<p>起风的那天，风从门缝进来，没有往屋子中间走，只贴着地，从灰面上过去。它不扬灰，只把最上面那一层推成一条很细的线。</p>
+
+<div class="beat">· · ·</div>
+
+<p>阿汐蹲下来看。那条线从火塘中心出发，朝门口去，走到一半停住，像写到一半的字。她没有伸手。有些字，写完要等风走。</p>
+<p>线每天都变一点：第一天指门，第二天指窗，第三天指回火塘。她忽然明白，灰不是死的，它在替风记账——记风今天从哪里来、走了多远、在哪儿拐了弯。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她翻开薄簿，想把这笔账抄下来。笔尖悬在纸上很久，最后没有落。有些账抄下来就变成债；不抄，它还是风。</p>
+<p>第七天风停了。灰面上的线也停了，正好指着门槛上那道盐。盐没有动，线也没有跨过去。两样东西隔着一条看不见的界线，像是互相点了一下头。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她拿起小扫帚，从线的末端开始，慢慢地扫。扫到火塘中心时，灰底下那块没烧完的柴露出来——还是干的，还能烧。她把柴捡起来，放回灶边。</p>
+<p>然后她把灰重新铺平。明天风还会来，还会写字；她也会再扫。日子就是这样一笔一笔地对上的：风记一遍，她抹一遍，谁也不欠谁。</p>
+
+<p class="coda">灰记得风走过的每一步，只是不写给人看。</p>
+<p class="coda">有些账不抄下来，才不会被记成债。</p>
+<p class="coda">止音纪元没有结束。它只是又多了一行灰上的字——盐在门槛上，薄簿合着，船停着，风来过——她也很好。</p>
+    </div>
+    <div class="en-copy">
+<p>The hearth had been cold for seven years. The ash was still there; no one swept it — not from laziness, but because under the ash lay the last stick that had never finished burning, and no one wanted to be the first to move it. The ash lay flat as an unwritten page.</p>
+<p>On the day the wind rose, it came through the seam and did not go toward the middle of the room; it kept low, passing over the ash. It did not raise the ash — it only pushed the topmost layer into a very thin line.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Axi crouched to look. The line started at the center of the hearth and went toward the door, then stopped halfway, like a word abandoned mid-stroke. She did not reach out. Some words must wait for the wind to leave before they are finished.</p>
+<p>The line changed a little each day: the first day it pointed at the door, the second at the window, the third back at the hearth. She understood, suddenly, that the ash was not dead — it was keeping accounts for the wind: where the wind came from today, how far it went, where it turned.</p>
+
+<div class="beat">· · ·</div>
+
+<p>She opened the thin ledger and thought to copy the account down. The brush hovered over the page a long while, and did not land. Some accounts become debts the moment they are copied; left uncopied, they remain wind.</p>
+<p>On the seventh day the wind stopped. The line on the ash stopped too, pointing exactly at the salt on the threshold. The salt did not move, and the line did not cross it. The two kept a boundary neither could see, and seemed to nod to each other.</p>
+
+<div class="beat">· · ·</div>
+
+<p>She took the small broom and began at the far end of the line, sweeping slowly. When she reached the center of the hearth, the unfinished stick showed through the ash — still dry, still able to burn. She picked it up and set it back beside the stove.</p>
+<p>Then she smoothed the ash flat again. Tomorrow the wind would come and write again; she would sweep again. That is how days are reconciled, stroke by stroke: the wind keeps one record, she erases one, and neither owes the other.</p>
+
+<p class="coda">The ash remembers every step the wind took; it simply does not write for people to read.</p>
+<p class="coda">Some accounts are never copied — and so never become debts.</p>
+<p class="coda">The age of hush has not ended. It has only gained one more line written on ash — the salt on the threshold, the thin ledger shut, the boat still, the wind having passed — and she was well too.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">本篇为《余响集》双语对照 · 人工闸定稿 · 零网络 · 与<a href="/caesura/codex/">世界谱</a>同源世界观。<a href="/caesura/story/anthology/">全集：《余响集》</a> · <a href="/caesura/story/atlas/">母题检索：余响索引</a></span>
+    <span class="en-copy">“The Aftermath,” bilingual, offline, human-gated — same world as the <a href="/caesura/codex/">codex</a>. <a href="/caesura/story/anthology/">All stories</a> · <a href="/caesura/story/atlas/">Motif Atlas</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/the-chip-on-the-rim/">篇八十七 · 碗沿的缺口</a> · <a href="/caesura/story/the-wind-at-the-seam/">篇八十八 · 门缝的风</a> · <a href="/caesura/story/the-wind-writes-on-the-ash/">篇八十九 · 风在灰上写字</a> · <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/story/atlas/">余响索引</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/the-chip-on-the-rim/">No. 87 · The Chip on the Rim</a> · <a href="/caesura/story/the-wind-at-the-seam/">No. 88 · The Wind at the Seam</a> · <a href="/caesura/story/the-wind-writes-on-the-ash/">No. 89 · The Wind Writes on the Ash</a> · <a href="/caesura/story/anthology/">All stories</a> · <a href="/caesura/story/atlas/">Motif Atlas</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'en' ? 'en-US' : (lang === 'zh-TW' ? 'zh-TW' : 'zh-CN'));
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+    if (window.__caesuraZhTW) {
+      if (lang === 'zh-TW' && window.__caesuraZhTW.applyToDocument) window.__caesuraZhTW.applyToDocument();
+      else if (lang === 'zh' && window.__caesuraZhTW.restoreOriginals) window.__caesuraZhTW.restoreOriginals();
+    }
+    btn.textContent = lang === 'zh' ? '繁體' : (lang === 'zh-TW' ? 'EN' : '简体');
+  }
+  if (btn) btn.addEventListener('click', function () {
+    var cur = root.getAttribute('data-lang'); apply(cur === 'zh' ? 'zh-TW' : (cur === 'zh-TW' ? 'en' : 'zh'));
+  });
+  apply(saved === 'en' || saved === 'zh-TW' ? saved : 'zh');
+})();
+</script>
+<script defer src="../../tracker.js"></script>
+<script defer src="/caesura/zh-tw-converter.js"></script>
+<script defer src="/caesura/read-progress.js"></script>
+</body>
+</html>

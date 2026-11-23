@@ -8,7 +8,10 @@ function makeJwt(claims: any): string {
   return `${b64({ alg: 'none' })}.${b64(claims)}.sig`
 }
 
-const valid = () => makeJwt({ sub: 'u1', scope: 'game:play', exp: Math.floor(Date.now() / 1000) + 3600 })
+// 令牌必须逐次完全一致：缓存 key 是令牌哈希，若 exp 随 Date.now() 每秒漂移，
+// 跨秒的一对调用会拿到不同 key，负缓存用例就会偶发假红（KI-493 全量套件复现过）。
+const VALID_EXP = Math.floor(Date.now() / 1000) + 3600
+const valid = () => makeJwt({ sub: 'u1', scope: 'game:play', exp: VALID_EXP })
 const expired = () => makeJwt({ sub: 'u2', scope: 'game:play', exp: Math.floor(Date.now() / 1000) - 10 })
 
 describe('caesura-auth-guard', () => {

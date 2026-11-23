@@ -1,6 +1,6 @@
 /**
- * 游记 · 八十五篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689/KI-690/KI-691/KI-692/KI-693/KI-694 扩）。
- * 这六十三篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 九十二篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689/KI-690/KI-691/KI-692/KI-693/KI-694 扩）。
+ * 这些篇目都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -4271,6 +4271,395 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She added no water, and made no entry.</p>
     <p class="coda">Some nights are enough left where they are.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more night — the door ajar, the bowl empty, the salt on the threshold, the ledger shut, the wind in and out — and she was well too.</p>`,
+  },
+  {
+    no: 86,
+    zhTitle: "碗底的一线",
+    enTitle: "A Line at the Bottom of the Bowl",
+    zh: `    <p>清晨，阿汐把门边的碗端起来。这是她这些天来第一次把它端起来。碗很轻——比空着的时候还要轻一点——碗底积着一点灰，灰的中间有一线——不是裂到底的裂缝——只是碗胎里留下的一道细纹——细得像谁用头发在釉下按了一下。她把它对着光看——光没有从纹里漏出来——它没有透。</p>
+    <p>她想过舀一瓢水进来试一试——水要是漏，就说明这一线是破的；水要是不漏，就说明它还好。她把碗端到水缸边——又停住了——她不知道自己想要的是哪一种答案——她只是把碗放回门边——放回原来的那圈印子里——圈印一点都没有偏——碗和木板互相认得。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>门槛上的盐还在——她没有动它——薄簿合着——页角今天没有抬——门外的船停着——船底的干痕在上午的光里显出来——和昨天一样——和前天也一样——她看过一眼——没有量——没有记——她不需要知道它有没有变——它也不需要被她知道。</p>
+    <p>中午，光直直落进碗里——落在那道细纹上——纹里亮起一线很细很细的金——像碗底自己点了一盏最小的灯——她想——这一线不是破——是碗留下的一条缝——让光也能盛在里面——水盛不住的地方——光可以——她不替碗下结论——她只是看见了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她想起母亲说过——碗要是有了裂——就别再盛热水——她没有问过热不热的事——她也没有煮热水——她只是把这个念头放在心里——像把一粒盐放在门槛上——不称它——也不扫掉它——念头在——就够了——不必变成一个决定。</p>
+    <p>傍晚，潮水涨上来——船身轻轻碰了一下门槛外的木桩——声音很轻——轻得像有人在很远的地方翻了一页薄簿——她没有起身——碗还在门边——盐还在门槛——光从碗底退出去——那一线也跟着暗下来——暗下来——不是熄灭——只是等下一次光。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>夜里，她坐在门内——没有点灯——碗在暗里——她看不见那一线——但她知道它在——就像她知道门槛上有盐——薄簿合着——船在水上——有些东西不必看见才算在——有些线不必量过才算长。</p>
+    <p>天快亮时，她伸手摸了摸碗底——指腹擦过那一线——很细——像一道没有写完的笔——她没有替它添笔——她把碗放正——站起来——门留着一道缝——风进来——又出去——新的一天没有比昨天多什么——也没有少什么。</p>
+
+    <p class="coda">碗底有一线细纹，空着不漏。</p>
+    <p class="coda">有些裂缝不是破——是让光也能盛进去。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一道碗底的线——盐在门槛上，簿合着，船停着，风进来又出去——她也很好。</p>`,
+    en: `    <p>At dawn, Axi lifted the bowl by the door. It was the first time in days she had lifted it. The bowl was light — lighter than when it was empty — a little dust had gathered at its bottom, and through the dust ran a line — not a crack that went all the way through — only a fine vein left in the clay — fine as if someone had pressed a hair beneath the glaze. She held it to the light — no light leaked through the line — it did not see through.</p>
+    <p>She thought of scooping a ladle of water into it, just to try — if the water leaked, the line was a break; if it did not, the bowl was whole. She carried the bowl to the water jar — and stopped — she did not know which answer she wanted — she only set the bowl back by the door — back into the ring it had worn on the boards — the ring had not shifted at all — the bowl and the boards knew each other.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The salt on the threshold was still there — she did not touch it — the thin ledger lay shut — its page corner did not lift today — the boat outside stayed — the dry mark beneath its hull showed in the morning light — the same as yesterday — the same as the day before — she looked once — did not measure — did not write it down — she need not know whether it had changed — nor did it need to be known by her.</p>
+    <p>At noon, light fell straight into the bowl — fell onto the fine line — and within the line kindled a thread of very thin gold — as if the bottom of the bowl had lit the smallest lamp of its own — she thought — this line is not a break — it is a seam the bowl kept — so that light could be held in it too — where water cannot stay — light can — she did not conclude anything for the bowl — she only saw it.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She remembered her mother saying — once a bowl is cracked, do not pour hot water into it — she had never asked about hot or cold — and she did not boil any water — she only set the thought down inside her — as one sets a grain of salt on the threshold — not weighing it — not sweeping it away — the thought was there — that was enough — it need not become a decision.</p>
+    <p>At dusk, the tide rose — the hull knocked softly against the post beyond the threshold — so soft it was like someone turning a page of the thin ledger far away — she did not rise — the bowl was still by the door — the salt still on the threshold — light withdrew from the bottom of the bowl — the line darkened with it — darkened — not gone out — only waiting for the next light.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>At night she sat inside the door — no lamp lit — the bowl in the dark — she could not see the line — but she knew it was there — as she knew there was salt on the threshold — the ledger shut — the boat on the water — some things need not be seen to be present — some lines need not be measured to be long.</p>
+    <p>Near dawn she reached out and touched the bottom of the bowl — her fingertip passed over the line — very fine — like a stroke that had never been finished — she did not add a stroke for it — she set the bowl upright — stood — the door kept its seam — the wind came in — and went out — the new day held nothing more than yesterday — and nothing less.</p>
+
+    <p class="coda">A hairline at the bottom of the bowl; empty, it does not leak.</p>
+    <p class="coda">Some cracks are not breaks — they let light be held too.</p>
+    <p class="coda">The age of hush has not ended. It has only gained one more line at the bottom of a bowl — the salt on the threshold, the ledger shut, the boat still, the wind in and out — and she was well too.</p>`,
+  },
+  {
+    no: 87,
+    zhTitle: "碗沿的缺口",
+    enTitle: "The Chip on the Rim",
+    zh: `    <p>中午，阿汐用拇指沿着碗沿摸了一圈。碗沿上有一个很小的缺口，是很多年前磕的；釉掉了一小块，露出里面的胎，颜色比外面浅。她摸到那里，停了一下。</p>
+    <p>缺口不割手。它已经被日子磨圆了。她想，刚磕坏的时候它一定很利；后来谁也没有再磕它，它自己就慢慢钝了。不是修好的钝，是它不再需要伤人的钝。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>门槛上的盐还在；薄簿合着；船停着。她今天没有看海。缺口里落进一点光，像碗沿自己含着的一小口水——只是光，不会洒。</p>
+    <p>她想起自己小时候也磕过一个碗；母亲没有骂她，只把碗转过来，让缺口朝里。她到今天才懂：让缺口朝里，不是藏起来，是不让日子再从那里割到人。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>傍晚，她把碗转了一下，让缺口朝着门里。潮水涨起来，船碰木桩，声音很轻。她没有起身。</p>
+    <p>夜里，她摸黑也能找到那个缺口——它像一个很小的记号，告诉她碗还是这一只。有些东西靠完整被认出来，有些靠一道小小的缺。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>天快亮时，她把碗放回门边。缺口朝里。新的一天没有比昨天多什么，也没有少什么。她很好。</p>
+    <p>她把碗放回原处，缺口朝里，像把一句不好听的话收进自己嘴里。门槛上的盐没有变少，也没有变多。她想，碗沿磕坏的那天，家里大概也是这样一个中午——有人手一滑，谁都没有说话，饭还是吃完了。</p>
+
+    <p class="coda">碗沿有个小缺口，摸上去已经不割手了。</p>
+    <p class="coda">不是所有缺都要补——有些缺，是日子替人磨圆的。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一个碗沿的缺口——盐在门槛上，簿合着，船停着，缺口朝里——她也很好。</p>`,
+    en: `    <p>At noon, Axi ran her thumb once around the rim of the bowl. A very small chip had been knocked out of it years ago; a little glaze was gone, showing the clay beneath, paler than the outside. Her thumb reached it and paused.</p>
+    <p>The chip did not cut. Days had rounded it. She thought: when it was fresh it must have been sharp; afterwards no one had struck it again, and it had slowly grown blunt by itself. Not the bluntness of a repair — the bluntness of no longer needing to wound.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The salt on the threshold was still there; the ledger shut; the boat still. She did not look at the sea today. A little light fell into the chip, as if the rim held a small mouthful of water of its own — only light, which cannot spill.</p>
+    <p>She remembered chipping a bowl herself as a child; her mother did not scold her, only turned the bowl around so the chip faced inward. Only today did she understand: turning the chip inward is not hiding it — it is keeping days from cutting anyone there again.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>At dusk she turned the bowl a little, so the chip faced the inside of the door. The tide rose; the boat touched the post; the sound was very soft. She did not rise.</p>
+    <p>At night she could find the chip in the dark — a very small mark telling her the bowl was still this bowl. Some things are known by being whole; some by a small absence.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Near dawn she set the bowl back by the door. The chip faced inward. The new day held nothing more than yesterday, and nothing less. She was well.</p>
+    <p>She set the bowl back in its place, chip inward, as one tucks an unkind word back into one's own mouth. The salt on the threshold had neither lessened nor grown. She thought: on the day the rim was chipped, the house must have had a noon like this — someone's hand slipped, no one spoke, and the meal was finished all the same.</p>
+
+    <p class="coda">A small chip on the rim; it no longer cuts when touched.</p>
+    <p class="coda">Not every absence needs filling — some are rounded by days on our behalf.</p>
+    <p class="coda">The age of hush has not ended. It has only gained one more chip on a rim — the salt on the threshold, the ledger shut, the boat still, the chip turned inward — and she was well too.</p>`,
+  },
+  {
+    no: 88,
+    zhTitle: "门缝的风",
+    enTitle: "The Wind at the Seam",
+    zh: `    <p>入夜起风。风不大，绕着屋子走了一圈，又走一圈，像在找一个能进来的地方。它找到了门缝——门板与门框之间那一条，比头发宽不了多少。</p>
+    <p>风从缝里进来，先把门后的灰吹成一道很细的弧。阿汐听见了，没有起身。风的声音比人说话轻，比人叹气长；它不催促什么，只是把屋里的空气换掉一小部分，再换掉一小部分。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>门槛上的盐没有动。盐太沉了，风推不动它。她想：风能进来的地方，盐不一定进得来；盐能守住的地方，风也不一定守得住。两样东西各守各的，谁也不欠谁。</p>
+    <p>她把碗放到门边，让碗口迎着那道缝。风落进碗里，转了一圈，出不去，就慢慢停了。碗里那一点风比外面暖，像被碗收下了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她想起很多年前有个人也这样放过碗——不是接风，是接一句没有被说出口的话。那人后来走了；碗还在；缝还在；风每年都来，来的日子前后差不了几天。</p>
+    <p>夜里风大了一点。门缝像一根很细的弦，被风拨着，发出一个几乎听不见的音。她不觉得吵。有些声音不是来打扰的，是来告诉你还有东西在动。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>天快亮时风停了。门缝里剩下一点凉，像有人刚从这里走过。她把碗里的风倒回门外——它本来就不属于屋里，留住它，它就不再是风了。</p>
+    <p>然后她照旧把碗放回原处，把盐推回门槛正中。她伸手检查了一遍门缝：缝还在，不宽不窄。新的一天没有比昨天多什么，也没有少什么。她很好。</p>
+
+    <p class="coda">门缝一直都在，风每年都来。</p>
+    <p class="coda">不是所有进来的都要留住——有些只是路过，替你说了那句你没法说的话。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一道门缝的风——盐在门槛上，薄簿合着，船停着，碗口朝门——她也很好。</p>`,
+    en: `    <p>At nightfall the wind rose. It was not a strong wind; it walked around the house once, then once more, as if looking for a way in. It found the seam — the one between door and frame, no wider than a hair.</p>
+    <p>The wind came through and first blew the dust behind the door into a very thin arc. Axi heard it and did not rise. The wind was softer than speech, longer than a sigh; it hurried nothing, only exchanged a small part of the room's air, and then another small part.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The salt on the threshold did not move. Salt is too heavy; the wind cannot push it. She thought: where the wind can enter, salt need not enter; where salt can keep watch, the wind need not keep watch. Each guards its own, and neither owes the other.</p>
+    <p>She set the bowl by the door, its mouth turned to the seam. The wind fell into the bowl, went once around, could not get out, and slowly stopped. That little wind in the bowl was warmer than the wind outside, as if the bowl had taken it in.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She remembered that years ago someone had set a bowl there in just this way — not to catch wind, but to catch a sentence that had never been spoken. That person left afterwards; the bowl remained; the seam remained; the wind came every year, within a few days of the same date.</p>
+    <p>At night the wind grew a little. The seam was like a very fine string, plucked by the wind, giving out a note almost too quiet to hear. She did not find it noisy. Some sounds do not come to disturb you; they come to tell you something is still moving.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Near dawn the wind stopped. A little coolness stayed in the seam, as if someone had just walked past. She poured the wind from the bowl back outside — it had never belonged indoors; keep it, and it would stop being wind.</p>
+    <p>Then she set the bowl back in its place as always, and pushed the salt back to the middle of the threshold. She reached out and checked the seam once: still there, neither wider nor narrower. The new day held nothing more than yesterday, and nothing less. She was well.</p>
+
+    <p class="coda">The seam has always been there; the wind comes every year.</p>
+    <p class="coda">Not everything that enters must be kept — some only pass through, saying on your behalf the thing you could not say.</p>
+    <p class="coda">The age of hush has not ended. It has only gained one more wind at a seam — the salt on the threshold, the ledger shut, the boat still, the bowl facing the door — and she was well too.</p>`,
+  },
+  {
+    no: 89,
+    zhTitle: "风在灰上写字",
+    enTitle: "The Wind Writes on the Ash",
+    zh: `    <p>火塘冷了七年。灰还在，没人扫——不是懒，是灰底下压着最后一块没有烧完的柴，谁也不想先动它。灰面平得像一张没有写字的纸。</p>
+    <p>起风的那天，风从门缝进来，没有往屋子中间走，只贴着地，从灰面上过去。它不扬灰，只把最上面那一层推成一条很细的线。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>阿汐蹲下来看。那条线从火塘中心出发，朝门口去，走到一半停住，像写到一半的字。她没有伸手。有些字，写完要等风走。</p>
+    <p>线每天都变一点：第一天指门，第二天指窗，第三天指回火塘。她忽然明白，灰不是死的，它在替风记账——记风今天从哪里来、走了多远、在哪儿拐了弯。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她翻开薄簿，想把这笔账抄下来。笔尖悬在纸上很久，最后没有落。有些账抄下来就变成债；不抄，它还是风。</p>
+    <p>第七天风停了。灰面上的线也停了，正好指着门槛上那道盐。盐没有动，线也没有跨过去。两样东西隔着一条看不见的界线，像是互相点了一下头。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她拿起小扫帚，从线的末端开始，慢慢地扫。扫到火塘中心时，灰底下那块没烧完的柴露出来——还是干的，还能烧。她把柴捡起来，放回灶边。</p>
+    <p>然后她把灰重新铺平。明天风还会来，还会写字；她也会再扫。日子就是这样一笔一笔地对上的：风记一遍，她抹一遍，谁也不欠谁。</p>
+
+    <p class="coda">灰记得风走过的每一步，只是不写给人看。</p>
+    <p class="coda">有些账不抄下来，才不会被记成债。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一行灰上的字——盐在门槛上，薄簿合着，船停着，风来过——她也很好。</p>`,
+    en: `    <p>The hearth had been cold for seven years. The ash was still there; no one swept it — not from laziness, but because under the ash lay the last stick that had never finished burning, and no one wanted to be the first to move it. The ash lay flat as an unwritten page.</p>
+    <p>On the day the wind rose, it came through the seam and did not go toward the middle of the room; it kept low, passing over the ash. It did not raise the ash — it only pushed the topmost layer into a very thin line.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Axi crouched to look. The line started at the center of the hearth and went toward the door, then stopped halfway, like a word abandoned mid-stroke. She did not reach out. Some words must wait for the wind to leave before they are finished.</p>
+    <p>The line changed a little each day: the first day it pointed at the door, the second at the window, the third back at the hearth. She understood, suddenly, that the ash was not dead — it was keeping accounts for the wind: where the wind came from today, how far it went, where it turned.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She opened the thin ledger and thought to copy the account down. The brush hovered over the page a long while, and did not land. Some accounts become debts the moment they are copied; left uncopied, they remain wind.</p>
+    <p>On the seventh day the wind stopped. The line on the ash stopped too, pointing exactly at the salt on the threshold. The salt did not move, and the line did not cross it. The two kept a boundary neither could see, and seemed to nod to each other.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She took the small broom and began at the far end of the line, sweeping slowly. When she reached the center of the hearth, the unfinished stick showed through the ash — still dry, still able to burn. She picked it up and set it back beside the stove.</p>
+    <p>Then she smoothed the ash flat again. Tomorrow the wind would come and write again; she would sweep again. That is how days are reconciled, stroke by stroke: the wind keeps one record, she erases one, and neither owes the other.</p>
+
+    <p class="coda">The ash remembers every step the wind took; it simply does not write for people to read.</p>
+    <p class="coda">Some accounts are never copied — and so never become debts.</p>
+    <p class="coda">The age of hush has not ended. It has only gained one more line written on ash — the salt on the threshold, the thin ledger shut, the boat still, the wind having passed — and she was well too.</p>`,
+  },
+  {
+    no: 90,
+    zhTitle: "空着的一格",
+    enTitle: "The One Left Empty",
+    zh: `    <p>回廊钟的东墙有一排灯龛，四十七格，一格一盏铜灯。阿汐数过很多回：四十六盏亮着，最末一格空着。</p>
+    <p>那一格不是灯坏了。里面没有钩子，没有灯座，连烟熏的痕迹也没有——好像砌墙的人砌到那里，忽然停下来，把这一格留给了墙自己。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>来的人不肯让一格空着。有人放一粒盐进去，有人放一枚铜扣，有人把自己路上捡的半截灯芯搁在格口。第二天再看，东西都不在了。不是被谁拿走：盐化进石头，铜扣落进墙缝，灯芯被穿堂风带走。那一格不存东西，也没打算存。</p>
+    <p>守灯的老人说，当年墙砌歪了一寸，这一格跟着歪，挂不住灯。后来没人来补，就让它空着。他说：空着的那一格比别的格干净，也比别的格亮——因为它不挡光。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>阿汐把手伸进去。里面没有风，没有凉，也没有回声。她的手在黑暗里待了一会儿，什么也没有摸到；退出来时，指尖上连灰都没有沾。</p>
+    <p>她忽然明白：这一格不是忘了装灯，它是让整面墙还能被数下去的那一格。数到四十六，总要有个地方停一停。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她翻开薄簿，把这一页的最后一行留给它：第四十七格，空。写完她没有合上簿，等墨自己干。墨干得很慢，像一个不肯马上被记下的答案。</p>
+    <p>第二天，一个赶路的人在那一格前站了很久。他说他一路上都在数灯，数到第四十六盏，就不知道再往前该往哪里走了；看见这一格空着，他反而知道该往哪里去了。</p>
+    <p>阿汐没有把灯补上。她把小扫帚靠在墙边，让那一格继续空着。灯是给走路的人看的；空着的那一格，是给数灯的人留的。</p>
+
+    <p class="coda">墙要留一格空着，数才数得下去。</p>
+    <p class="coda">不是所有的空都要填满——有些空格，是给走到这里的人留的。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一格空——盐在门槛上，薄簿合着，船停着，风来过，灯都亮着，只有一格留给没有灯的人——她也很好。</p>`,
+    en: `    <p>On the east wall of the Arcade of Echoes runs a row of lamp niches — forty-seven of them, one copper lamp apiece. Axi has counted them many times: forty-six are lit, and the last one is empty.</p>
+    <p>It is not that the lamp there broke. The niche has no hook, no socket, not even a soot stain — as if the builder had climbed to that spot, stopped, and left this one niche to the wall itself.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Visitors cannot bear to leave a single niche empty. Someone puts in a grain of salt, someone a copper button, someone half a wick picked up along the road. By the next day nothing is there. No one has taken it: the salt melts into the stone, the button drops into the seam, the wick is carried off by the through-draft. That niche keeps nothing, and never meant to.</p>
+    <p>The old lamplighter says the wall was laid an inch crooked, and this niche went with it, so no lamp would hang straight. No one came to mend it; they let it stay empty. He says: the empty one is cleaner than the others, and brighter too — because it does not block the light.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Axi puts her hand inside. No wind there, no cold, no echo. Her hand stays in the dark a while and touches nothing; when she draws it out, not even ash clings to her fingertips.</p>
+    <p>She understands, suddenly: this niche did not forget a lamp — it is the one that lets the whole wall still be counted. When you have counted to forty-six, there must be a place to stop.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She opens the thin ledger and gives the last line of the page to it: the forty-seventh niche, empty. She does not close the book when she has written; she waits for the ink to dry. It dries slowly, like an answer that refuses to be recorded at once.</p>
+    <p>The next day a traveler stands a long while before that niche. He says he had been counting the lamps all along the road, and when he reached the forty-sixth he no longer knew which way to go; seeing this one empty, he knew.</p>
+    <p>Axi does not fill it with a lamp. She leans the small broom against the wall and lets the niche stay empty. Lamps are for those who walk; the empty one is kept for those who count.</p>
+
+    <p class="coda">A wall must leave one niche empty, or the counting cannot go on.</p>
+    <p class="coda">Not every emptiness needs filling — some empty places are kept for whoever arrives here.</p>
+    <p class="coda">The age of hush has not ended. It has only gained one more empty niche — the salt on the threshold, the thin ledger shut, the boat still, the wind having passed, every lamp burning, one niche kept for those who carry no lamp — and she was well too.</p>`,
+  },
+  {
+    no: 91,
+    zhTitle: "未铸之钟",
+    enTitle: "The Bell Not Cast",
+    zh: `<p>回廊钟东墙外有一道缓坡，坡下是铸钟坊。坊里没有钟，只有一只倒扣在坑里的模。</p>
+<p>模是两只泥壳合起来的，外头箍着三圈铁箍，接缝处抹了封泥。三十九年前，最后一口钟就是在这个坑里浇出来的；浇完，匠人把下一只模也做好了，却再没有开炉。</p>
+
+<div class="beat">· · ·</div>
+
+<p>阿汐小时候来过一次。她问带她来的老人：这只模里是什么？老人说：是一口钟。她又问：那为什么不浇？老人说：那时候大家数过了，钟够了；再多一口，数就乱了。</p>
+<p>模就这么留在坑里。铸钟坊的炉子却一直没熄——不浇铜，只压着一层小火。守坊人说，模最怕冷：一冷，泥壳自己就会裂；裂了，就什么也留不住。</p>
+
+<div class="beat">· · ·</div>
+
+<p>阿汐蹲下去，把耳朵贴在浇口上。浇口只有一个拳头大，是铜水进来的地方，边沿还留着一圈当年没擦净的黑。</p>
+<p>里面没有声音。不是空屋子的那种没有声音，也不是死人的那种；是一种<strong>有形状的没有声音</strong>——像一个人把一句话含在嘴里，含了三十九年，连气都按着原来的样子。</p>
+
+<div class="beat">· · ·</div>
+
+<p>守坊人走过来，把手掌放在泥壳上，说：钟把声音收在铜里，模把声音收在空里。铜里的那一口，敲了就响；空里的这一口，谁也敲不着。</p>
+<p>阿汐问：那它算不算一口钟？</p>
+<p>守坊人没有答。他弯腰把炉门开了一线，火苗往里缩了一下，又慢慢立起来。他说：你听。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她听了很久。坡上有人在关窗，一只碗落在石板上，没有碎；风从坡上下来，绕过坊子，从另一头走了。这些都是外面的声音。</p>
+<p>里面那一层，始终没有动静。可她忽然发觉，自己一直在按着一个拍子呼吸——三拍，一停。和模的接缝一样：两只泥壳，合在一条线上，中间那道缝，正好把一口气分成两半。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她翻开薄簿，在末页写下：第九十一口，未铸。</p>
+<p>写完看了一会儿，又添了两个字：已在。</p>
+<p>守坊人看见了，什么也没说，只把封泥重新按了按，让那道接缝合得更严一点。炉子压着小火，泥壳里那口没有铜的钟，仍旧含着它那一口气。</p>
+
+<p class="coda">不是所有的钟都要浇出来。</p>
+<p class="coda">有的钟把铜省下来，只留下一个钟形的空——你贴近去听，听见的是自己那口气，在钟里绕了一圈，没有散。</p>
+<p class="coda">止音纪元没有结束。它只是又多了一口钟——没有铜，没有舌，没有声音；炉子压着小火，模合着，接缝上那道线还在，等一个不打算敲的人来听。</p>`,
+    en: `<p>Below the east wall of the Arcade of Echoes the ground slopes down to a casting yard. There are no bells in the yard — only a mould, turned upside down in its pit.</p>
+<p>The mould is two clay shells closed together, bound with three iron hoops, the seam sealed with clay. Thirty-nine years ago the last bell of the Arcade was poured in this pit. When it was done, the founder built the next mould too, and then never opened the furnace again.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Axi came here once as a child. She asked the old man who brought her: what is inside this mould? A bell, he said. Then why wasn’t it poured? he said: because by then we had counted them, and the bells were enough. One more, and the count would go wrong.</p>
+<p>So the mould stayed in its pit. But the furnace in the casting yard was never put out — no copper in it, only a low fire banked under the ash. The yard-keeper says a mould fears the cold: once it goes cold, the clay shells crack by themselves, and then nothing is kept at all.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Axi crouches and puts her ear to the pour gate. The gate is no bigger than a fist — the way the copper was meant to come in — and its rim still carries a ring of black no one wiped away that year.</p>
+<p>There is no sound inside. Not the no-sound of an empty room, nor the no-sound of the dead; it is a <strong>no-sound with a shape</strong> — like a person holding a sentence in the mouth for thirty-nine years, holding even the breath in its original shape.</p>
+
+<div class="beat">· · ·</div>
+
+<p>The yard-keeper comes over and lays his palm on the clay shell. A bell, he says, keeps its sound in the bronze; a mould keeps its sound in the emptiness. The one in bronze rings when you strike it. The one in the emptiness, no one can strike.</p>
+<p>Axi asks: then is it a bell or not?</p>
+<p>He does not answer. He bends, opens the furnace door a finger’s width; the flame shrinks back, then slowly stands up again. He says: listen.</p>
+
+<div class="beat">· · ·</div>
+
+<p>She listens a long while. Up the slope someone is closing a window; a bowl falls on the flagstones and does not break; the wind comes down the slope, goes around the yard, and leaves by the other side. All of that is outside sound.</p>
+<p>The layer inside never stirs. But she suddenly notices that she has been breathing to a beat — three, then a pause. The same as the seam of the mould: two clay shells closed on a single line, and the seam between them splits one breath neatly in two.</p>
+
+<div class="beat">· · ·</div>
+
+<p>She opens the thin ledger and writes on the last page: the ninety-first bell, not cast.</p>
+<p>She looks at it a while, then adds two words: already here.</p>
+<p>The yard-keeper sees it and says nothing. He only presses the sealing clay down again, so the seam closes a little tighter. The furnace keeps its low fire; the bell with no bronze in it keeps holding its one breath.</p>
+
+<p class="coda">Not every bell has to be poured.</p>
+<p class="coda">Some bells spare the copper and leave only a bell-shaped emptiness — lean in and listen, and what you hear is your own breath going once around inside it, not scattering.</p>
+<p class="coda">The age of hush has not ended. It has only gained one more bell — no bronze, no clapper, no sound; the furnace banked low, the mould closed, the line of the seam still there, waiting for someone who does not mean to strike it.</p>`,
+  },
+  {
+    no: 92,
+    zhTitle: "浇口上的黑",
+    enTitle: "The Black at the Pour Gate",
+    zh: `<p>第二天早上，阿汐提着一只木桶、一块布，回到铸钟坊。桶里是井水，布里裹着一把细沙。</p>
+<p>她要擦掉浇口上那圈黑。</p>
+<p>守坊人从炉边站起来，走到坑边，说：放下。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她说：它脏了三十九年。</p>
+<p>他说：那不是脏。</p>
+<p>他蹲下，用指腹在口沿上抹了一下，举给她看。指腹黑了一层，像沾了很细的炭。他说：这是蜡钟留下来的全部。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她不懂。他就在沙地上画：先画一只钟，说，铸钟不是从铜开始的，是从蜡开始的。匠人先把钟刻出来——一只有唇、有肩、有腰的蜡钟，连钟钮上的纹都刻好。</p>
+<p>然后裹泥。泥壳一层一层裹上去，裹厚，裹硬，只留一个口，就是浇口。</p>
+<p>再烧。火从外面烧，蜡从里面化，顺着浇口流出来，流得干干净净；蜡走过的路，留下烟，烟结在口沿上，就是这圈黑。</p>
+<p>他说：蜡没有了，泥壳里就空出一个钟形的洞。铜要从浇口进来，把这个洞填满。填满了，敲碎泥壳，铜就是钟。</p>
+
+<div class="beat">· · ·</div>
+
+<p>阿汐看着那圈黑，问：那这只呢？</p>
+<p>守坊人说：蜡烧掉了，洞空出来了，铜没有来。</p>
+<p>她问：蜡钟在里面待了多久？</p>
+<p>他说：十一天。刻了十一天，烧了一夜。</p>
+<p>她把手指按在黑上。黑不脏手，只是把指纹填满。她忽然想到一件事：那只蜡钟有过唇，有过肩，有过腰；有人刻过它，看过它，也许还在它旁边吃过一顿饭。它比很多真的钟都更完整地存在过——只是没有铜。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她把布收起来，把桶提出坊门，把水倒在坡下的干土上。水渗得很快，像被什么喝掉了。</p>
+<p>回来时，她翻开薄簿，在昨夜那一行下面添了一句：</p>
+<p>第九十一口，先有蜡，后有黑，未铸。</p>
+<p>守坊人看了一眼，说：你漏了一句。</p>
+<p>她问：漏了什么？</p>
+<p>他指了指浇口：<strong>它来过。</strong></p>
+<p>她就把这三个字也写上了。</p>
+
+<p class="coda">不是所有的钟都由铜证明自己来过。</p>
+<p class="coda">有的钟是一层烟，一圈黑，一个被火烧空的形状；它没有响过，却把“曾经有过”留在了最窄的地方——浇口只有拳头大，可它记得一整只钟。</p>
+<p class="coda">止音纪元没有结束。它只是又多了一条证据：炉子压着小火，泥壳合着，口沿上的黑不擦；有人来问，守坊人就说，那不是脏，那是一口钟的签名。</p>`,
+    en: `<p>The next morning Axi came back to the casting yard with a wooden bucket, a cloth, and a little fine sand folded into the cloth.</p>
+<p>She meant to scrub the ring of black off the pour gate.</p>
+<p>The yard-keeper rose from the furnace, came to the edge of the pit, and said: put it down.</p>
+
+<div class="beat">· · ·</div>
+
+<p>She said: it has been dirty for thirty-nine years.</p>
+<p>He said: that is not dirt.</p>
+<p>He crouched and wiped a fingertip along the rim, then held it up for her. The fingertip was black, as if touched with very fine charcoal. He said: that is all that is left of the wax bell.</p>
+
+<div class="beat">· · ·</div>
+
+<p>She did not understand. So he drew in the sand: first a bell. He said, casting a bell does not begin with bronze. It begins with wax. The founder carves the bell first — a wax bell with a lip, a shoulder, a waist, even the pattern on its crown cut in.</p>
+<p>Then the clay. Layer upon layer, thick and hard, with one opening left: the pour gate.</p>
+<p>Then the fire. The fire burns from outside; the wax melts within and runs out through the gate, runs clean; the way the wax went keeps its smoke, and the smoke sets on the rim. That is this ring of black.</p>
+<p>He said: the wax is gone, and inside the clay shell an emptiness in the shape of a bell is left. The bronze is meant to come in through the gate and fill that emptiness. When it is full, you break the shell, and the bronze is the bell.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Axi looked at the ring of black and asked: and this one?</p>
+<p>The yard-keeper said: the wax burned out. The emptiness opened. The bronze never came.</p>
+<p>She asked: how long was the wax bell in there?</p>
+<p>He said: eleven days. Eleven days to carve, one night to burn.</p>
+<p>She pressed her finger to the black. It did not soil her hand; it only filled the ridges of her fingerprint. And she thought of something: that wax bell had had a lip, a shoulder, a waist; someone had carved it, looked at it, perhaps even eaten a meal beside it. It had existed more completely than many real bells — it simply had no bronze.</p>
+
+<div class="beat">· · ·</div>
+
+<p>She put the cloth away, carried the bucket out of the yard, and poured the water onto the dry earth downhill. It sank quickly, as if something had drunk it.</p>
+<p>When she came back, she opened the thin ledger and added a line beneath the one from the night before:</p>
+<p>the ninety-first bell: wax first, then black, not cast.</p>
+<p>The yard-keeper glanced at it and said: you left out a line.</p>
+<p>She asked: what did I leave out?</p>
+<p>He pointed at the pour gate: <strong>it was here.</strong></p>
+<p>So she wrote those words too.</p>
+
+<p class="coda">Not every bell proves it was here by its bronze.</p>
+<p class="coda">Some bells are a layer of smoke, a ring of black, a shape burned hollow; they never rang, and yet they left “there was once” in the narrowest place — the pour gate is only a fist wide, and it remembers a whole bell.</p>
+<p class="coda">The age of hush has not ended. It has only gained one more piece of evidence: the furnace banked low, the clay shells closed, the black on the rim left unscrubbed. When someone asks, the yard-keeper says: that is not dirt. That is a bell’s signature.</p>`,
   },
 ]
 

@@ -35,7 +35,14 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 - 《账本》（短篇原创之四）：<https://xiaodernan.github.io/caesura/story/ledger/>（休垒 · Meg 不敢合上的那一页账 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《回声庭园》（短篇原创之五）：<https://xiaodernan.github.io/caesura/story/garden/>（余响新陆 · 第六境 · 旧钟的主人 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《雨审判》（短篇原创之六）：<https://xiaodernan.github.io/caesura/story/tribunal/>（余响新陆 · 雨钟谷地 · 雨罪审判者 · 七年一庭 · 双语对照 · 零 LLM · 2026-11-15） ·  
-- 《余响集》（全集页 · 整册入口 · 支持一键打印成纸质卷）：<https://xiaodernan.github.io/caesura/story/anthology/>（八十五篇整册 · 史诗般总起预告 · EPIC-VII 实写落地 · 2026-11-19 增篇八十五《门内一夜》） ·  
+- **余响索引**（母题检索 · 九十二篇一键筛 · 六条四站母题路径）: <https://xiaodernan.github.io/caesura/story/atlas/>（盐 / 碗 / 船 / 簿 / 门 / 钟 / 光 / 线 / 潮 / 灰 / 风 / 空 · 搜一个词找到所有写过它的故事 · 盐线 / 门线 / 船线 / 灰线 / 碗线 / 钟线互不抢篇 · 本机已读进度 · 零网络 · 零 LLM · 2026-11-22） ·  
+- 《碗沿的缺口》（短篇原创之八十七）：<https://xiaodernan.github.io/caesura/story/the-chip-on-the-rim/>（回廊钟·碗沿的缺口 · 被日子磨圆 · 缺口朝里 · 不是所有缺都要补 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-22） ·  
+- 《门缝的风》（短篇原创之八十八）：<https://xiaodernan.github.io/caesura/story/the-wind-at-the-seam/>（回廊钟·门缝的风 · 风每年都来 · 缝一直都在 · 不是所有进来的都要留住 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-22） ·  
+- 《风在灰上写字》（短篇原创之八十九）：<https://xiaodernan.github.io/caesura/story/the-wind-writes-on-the-ash/>（回廊钟·冷火塘 · 灰替风记账 · 线每天换方向 · 有些账不抄下来才不会被记成债 · 双语对照 · 零 LLM · 2026-11-22） ·  
+- 《空着的一格》（短篇原创之九十）：<https://xiaodernan.github.io/caesura/story/the-one-left-empty/>（回廊钟·东墙四十七格灯龛 · 最末一格空着 · 墙要留一格空着，数才数得下去 · 不是所有的空都要填满 · 双语对照 · 零 LLM · 2026-11-22） ·  
+- 《未铸之钟》（短篇原创之九十一）：<https://xiaodernan.github.io/caesura/story/the-bell-not-cast/>（回廊钟·坡下铸钟坊 · 三十九年没开模的泥壳 · 不是所有的钟都要浇出来 · 只留下一个钟形的空 · 等一个不打算敲的人来听 · 双语对照 · 零 LLM · 2026-11-22） ·  
+- 《浇口上的黑》（短篇原创之九十二）：<https://xiaodernan.github.io/caesura/story/the-black-at-the-pour-gate/>（回廊钟·铸钟坊 · 浇口上那圈黑是蜡钟留下的全部 · 先刻蜡钟、裹泥、火烧、蜡走烟留；铜没有来 · 薄簿：先有蜡，后有黑，未铸；守坊人补：它来过 · 双语对照 · 零 LLM · 2026-11-22） ·  
+- 《余响集》（全集页 · 整册入口 · 支持一键打印成纸质卷）：<https://xiaodernan.github.io/caesura/story/anthology/>（九十二篇整册 · 史诗般总起预告 · EPIC-VII 实写落地 · 2026-11-22 增篇九十二《浇口上的黑》） ·  
 - 《霜锤》（短篇原创之七）：<https://xiaodernan.github.io/caesura/story/frostbell/>（霜锤崖 · 末任钟匠 · 冻成冰的声音 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《千门》（短篇原创之八）：<https://xiaodernan.github.io/caesura/story/doors/>（回廊钟 · 一千扇门 · 守门人 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《石喉》（短篇原创之九）：<https://xiaodernan.github.io/caesura/story/stonethroat/>（低音之城 · 石喉母亲 · 不需要货币的音 · 双语对照 · 零 LLM · 2026-11-15） ·  
@@ -112,7 +119,10 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 - 《两条线》（短篇原创之八十）：<https://xiaodernan.github.io/caesura/story/two-lines/>（回廊钟·两条线 · 潮退干痕还在 · 潮涨它被覆过再退它还在原处 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-19） ·  
 - 《船边的一页》（短篇原创之八十一）：<https://xiaodernan.github.io/caesura/story/a-page-by-the-boat/>（回廊钟·船边的一页 · 门外的船仍停着 · 簿阖着 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-19） ·  
 - 《未寄的一页》（短篇原创之八十二）：<https://xiaodernan.github.io/caesura/story/the-unsent-page/>（回廊钟·未寄的一页 · 清晨船边仍在 · 阿汐没有翻它 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-19） ·  
-- 《门内一夜》（短篇原创之八十五）：<https://xiaodernan.github.io/caesura/story/the-empty-bowl/>（回廊钟·门口的水 · 空碗没水 · 门槛盐没动 · 门留一道缝 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-19） ·  
+- 《门边的空碗》（短篇原创之八十三）：<https://xiaodernan.github.io/caesura/story/the-empty-bowl/>（回廊钟·门边的空碗 · 清晨门槛边的盐还在 · 薄簿合着 · 页角没有动 · 她没去看海 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-19） ·  
+- 《门口的水》（短篇原创之八十四）：<https://xiaodernan.github.io/caesura/story/water-by-the-door/>（回廊钟·门口的水 · 空碗里没有水 · 门槛上的盐没动 · 门留了一道缝 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-19） ·  
+- 《门内一夜》（短篇原创之八十五）：<https://xiaodernan.github.io/caesura/story/a-night-within/>（回廊钟·门内一夜 · 风过门缝 · 碗仍空着 · 盐没动 · 簿页角抬起又落回 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-19） ·  
+- 《碗底的一线》（短篇原创之八十六）：<https://xiaodernan.github.io/caesura/story/a-line-in-the-bowl/>（回廊钟·碗底的一线 · 碗底一道细纹 · 空着不漏 · 光也盛得住 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-22） ·  
 - 数据最新：`master` 每推即重嵌 `site-latest.json`（raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json）  
 
 > 注意：线上是 `?fresh=1` 的干净状态，页面证据文件总会对账最新 master；页面首屏可能短暂停在 boot 屏。
@@ -126,6 +136,26 @@ npm run validate:data  # 数据门（当前：0 ERROR / 2 WARN，均为既有项
 npm run coverage       # 覆盖率棘轮门（空报表退化按 exit 2 记账，不判 guilty）
 npm run build          # tsc + vite build + check-dist（产物：dist/）
 ```
+
+## 压力测试实测（2026-11-22）
+
+三条可复现的压测路径，读数原样记录，不做修饰：
+
+```bash
+node scripts/pressure-mesh.mjs --iterations=400 --concurrency=40
+# 400/400 成功 · 0 错误 · avg 195µs · p50/p95/p99 = 180/363/809µs · heap +1.1MB
+
+node scripts/stress-live.mjs --target=/caesura/ --concurrency=24 --rounds=2
+# 48/48 HTTP 200 且 body 非空 · 0 失败 · mean 267.5ms · p50 132ms · p95 424ms · p99 504ms · 305,136 bytes
+
+node scripts/sim-real-visitor.mjs --seed=1
+# 94/94 页面 200 · 0 坏页 · 盲点 12 跳 0 失败 · 出域 referrer 200 · 3,184,351 bytes · avg 33,876 bytes · 5,880ms（冷）/ 471ms（CDN 已热）
+```
+
+前者测本侧路由链 / 决策 / transport mock 的开销（进程内、确定性）；后者打公网只读页面，
+测 CDN + Pages 的并发承受与尾部延迟。两者都只读、不改数据，失败率非零即退出码 1。
+第三行模拟真实访客的两种典型行为——「没耐心就关掉」与「不知道去哪就瞎点」；
+取样覆盖含新上线的《余响索引》，全程零 LLM、零写入。
 
 ## 文档地图
 

@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "91f19d1d4421a481411b2ce4638dfee58133089b",
+  "head": "b3f3085618dc68ab4d37fae05fe38f1018b93a77",
   "branch": "master",
-  "subject": "feat: KI-740 服务注册租约 → 自动摘除 → 有界故障转移",
-  "date": "2026-11-22T13:58:43+08:00",
+  "subject": "场景圣经/AI 导演提示词与 atlas 头注：八十五篇 → 九十二篇（消除上下文自相矛盾）",
+  "date": "2026-11-22T23:20:53+08:00",
   "kv": {
-    "KI.rows": 658,
-    "KI.Implemented": 481,
+    "KI.rows": 659,
+    "KI.Implemented": 482,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/91f19d1d4421a481411b2ce4638dfee58133089b",
+    "url": "https://github.com/xiaodernan/caesura/commit/b3f3085618dc68ab4d37fae05fe38f1018b93a77",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }

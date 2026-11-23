@@ -38,7 +38,14 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Ledger" (original short story, no. 4): <https://xiaodernan.github.io/caesura/story/ledger/> (Resthold · the page Meg never dared to close · bilingual · zero LLM · added 2026-11-15)  
 - "The Garden of Return" (original short story, no. 5): <https://xiaodernan.github.io/caesura/story/garden/> (The Afterland · the sixth sound · The Owner of the Old Bell · bilingual · zero LLM · added 2026-11-15)  
 - "The Rain Tribunal" (original short story, no. 6): <https://xiaodernan.github.io/caesura/story/tribunal/> (The Afterland · the Rainbell Valley · The Drowning Jurist · seven years between sessions · bilingual · zero LLM · added 2026-11-15)  
-- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all eighty-five stories · EPIC-VII draft now inside · updated 2026-11-19)  
+- **Motif Atlas** (search all ninety-two stories by motif; six four-stop routes): <https://xiaodernan.github.io/caesura/story/atlas/> (salt / bowl / boat / ledger / door / bell / light / line / tide / ash / wind / empty — search one word, find every story that wrote it; Salt / Door / Boat / Ash / Bowl / Bell routes never share a story; local reading progress; offline; zero LLM; 2026-11-22) ·  
+- "The Chip on the Rim" (short fiction No.87): <https://xiaodernan.github.io/caesura/story/the-chip-on-the-rim/> (the Arcade · a chip rounded by days; turned inward; not every absence needs filling · LLM-drafted, human-gated · zero LLM · 2026-11-22) ·  
+- "The Wind at the Seam" (short fiction No.88): <https://xiaodernan.github.io/caesura/story/the-wind-at-the-seam/> (the Arcade · the wind finds the seam every year; not everything that enters must be kept · LLM-drafted, human-gated · zero LLM · 2026-11-22) ·  
+- "The Wind Writes on the Ash" (short fiction No.89): <https://xiaodernan.github.io/caesura/story/the-wind-writes-on-the-ash/> (the Arcade · a cold hearth · the ash keeps the wind's accounts; some accounts never copied never become debts · bilingual · zero LLM · 2026-11-22) ·  
+- "The One Left Empty" (short fiction No.90): <https://xiaodernan.github.io/caesura/story/the-one-left-empty/> (the Arcade · forty-seven lamp niches, the last left empty · a wall must leave one niche empty, or the counting cannot go on · bilingual · zero LLM · 2026-11-22) ·  
+- "The Bell Not Cast" (short fiction No.91): <https://xiaodernan.github.io/caesura/story/the-bell-not-cast/> (the Arcade · the casting yard below the slope · a clay mould unopened for thirty-nine years · not every bell has to be poured; some leave only a bell-shaped emptiness, waiting for someone who does not mean to strike it · bilingual · zero LLM · 2026-11-22) ·  
+- "The Black at the Pour Gate" (short fiction No.92): <https://xiaodernan.github.io/caesura/story/the-black-at-the-pour-gate/> (the casting yard · the ring of black at the pour gate is all that is left of the wax bell · wax carved, clay sealed, fire burned, wax gone and smoke kept; the bronze never came · the thin ledger: wax first, then black, not cast; the yard-keeper adds: it was here · bilingual · zero LLM · 2026-11-22) ·  
+- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all ninety-two stories · EPIC-VII draft now inside · updated 2026-11-22)  
 - "The Frostbell" (original short story, no. 7): <https://xiaodernan.github.io/caesura/story/frostbell/> (The Frostbell Cliff · The Last Frostwright · the sound the ice kept · bilingual · zero LLM · added 2026-11-15)  
 - "The Thousand Doors" (original short story, no. 8): <https://xiaodernan.github.io/caesura/story/doors/> (The Arcade of Echoes · the Gatekeeper of a Thousand Doors · bilingual · zero LLM · added 2026-11-15)  
 - "The Stone-Throat" (original short story, no. 9): <https://xiaodernan.github.io/caesura/story/stonethroat/> (The City of Low Tones · The Stone-Throat Matriarch · the pitch that costs nothing · bilingual · zero LLM · added 2026-11-15)  
@@ -115,8 +122,32 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "Two Lines" (short fiction No.80): <https://xiaodernan.github.io/caesura/story/two-lines/> (the Arcade · the tide withdrew; the dry mark remained · LLM-drafted, human-gated · zero LLM · 2026-11-19) ·  
 - "A Page by the Boat" (short fiction No.81): <https://xiaodernan.github.io/caesura/story/a-page-by-the-boat/> (the Arcade · the boat remained outside; the ledger stayed shut · LLM-drafted, human-gated · zero LLM · 2026-11-19) ·  
 - "The Unsent Page" (short fiction No.82): <https://xiaodernan.github.io/caesura/story/the-unsent-page/> (the Arcade · at dawn, the page by the boat remained; at ebb, the dry mark showed · LLM-drafted, human-gated · zero LLM · 2026-11-19) ·  
-- "A Night Within" (short fiction No.85): <https://xiaodernan.github.io/caesura/story/the-empty-bowl/> (the Arcade · at dawn, the salt remained by the threshold; the ledger stayed shut · LLM-drafted, human-gated · zero LLM · 2026-11-19) ·  
+- "The Empty Bowl" (short fiction No.83): <https://xiaodernan.github.io/caesura/story/the-empty-bowl/> (the Arcade · at dawn the salt remained by the threshold; the ledger shut; the corner still; she did not look at the sea · LLM-drafted, human-gated · zero LLM · 2026-11-19) ·  
+- "Water by the Door" (short fiction No.84): <https://xiaodernan.github.io/caesura/story/water-by-the-door/> (the Arcade · no water in the empty bowl; the salt untouched; a seam left in the door · LLM-drafted, human-gated · zero LLM · 2026-11-19) ·  
+- "A Night Within" (short fiction No.85): <https://xiaodernan.github.io/caesura/story/a-night-within/> (the Arcade · wind through the seam; the bowl still empty; the salt untouched; the ledger corner lifted and fell · LLM-drafted, human-gated · zero LLM · 2026-11-19) ·  
+- "A Line at the Bottom of the Bowl" (short fiction No.86): <https://xiaodernan.github.io/caesura/story/a-line-in-the-bowl/> (the Arcade · a hairline at the bottom of the bowl; empty, it does not leak; it can hold light too · LLM-drafted, human-gated · zero LLM · 2026-11-22) ·  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
+
+## Stress runs (measured 2026-11-22)
+
+Three reproducible paths; the readings are recorded as-is:
+
+```bash
+node scripts/pressure-mesh.mjs --iterations=400 --concurrency=40
+# 400/400 ok · 0 errors · avg 195µs · p50/p95/p99 = 180/363/809µs · heap +1.1MB
+
+node scripts/stress-live.mjs --target=/caesura/ --concurrency=24 --rounds=2
+# 48/48 HTTP 200 with non-empty bodies · 0 failures · mean 267.5ms · p50 132ms · p95 424ms · p99 504ms · 305,136 bytes
+
+node scripts/sim-real-visitor.mjs --seed=1
+# 94/94 pages 200 · 0 bad pages · 12 blind hops, 0 failures · outbound referrer 200 · 3,184,351 bytes · avg 33,876 bytes · 5,880ms cold / 471ms warm CDN
+```
+
+The first measures our own routing chain / decision / transport-mock cost (in-process, deterministic);
+the second hammers the public read-only page and measures CDN + Pages concurrency and tail latency.
+Both are read-only; any non-zero failure rate exits 1.
+The third simulates two real visitor behaviours — “bail out when impatient” and “click around when lost” —
+and now samples the newly shipped Motif Atlas; zero LLM, zero writes throughout.
 
 ## Where to read
 
