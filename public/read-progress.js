@@ -105,7 +105,8 @@
     { slug: 'the-wind-writes-on-the-ash', zh: '《风在灰上写字》', en: 'The Wind Writes on the Ash' },
     { slug: 'the-one-left-empty', zh: '《空着的一格》', en: 'The One Left Empty' },
     { slug: 'the-bell-not-cast', zh: '《未铸之钟》', en: 'The Bell Not Cast' },
-    { slug: 'the-black-at-the-pour-gate', zh: '《浇口上的黑》', en: 'The Black at the Pour Gate' }
+    { slug: 'the-black-at-the-pour-gate', zh: '《浇口上的黑》', en: 'The Black at the Pour Gate' },
+    { slug: 'the-second-print-on-the-mould', zh: '模上的第二道指印', en: 'The Second Print on the Mould' }
   ];
 
   var PREFIX = '/caesura/story/';
@@ -180,7 +181,7 @@
                       : '/caesura/story/anthology/';
       var label = next
         ? (isEN ? 'Next · ' + next.en : '下一篇 · ' + next.zh)
-        : (isEN ? 'The Aftermath · all ninety-two' : '余响集 · 九十二篇全集');
+        : (isEN ? 'The Aftermath · all ninety-three' : '余响集 · 九十二篇全集');
       var tag = isEN ? (next ? 'Keep reading' : 'Read the whole volume') : (next ? '继续读下一页' : '读完全册');
       nextCard = document.createElement('a');
       nextCard.className = 'read-next';

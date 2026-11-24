@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模上的第二道指印 / The Second Print on the Mould — CAESURA · 余响集 · 第九十三篇</title>
+<meta name="description" content="《止音纪元》余响集第九十三篇：碎泥壳内壁留着两道指印，一道是刻蜡人按的，一道是烧火人按的。铜没有来，空着的泥壳把那两下按住了。双语·零网络·零 LLM。 / The ninety-third piece of The Aftermath: two prints remain inside a shard of clay shell — one from the wax-carver, one from the fire-keeper. The bronze never came; the empty shell kept both pressures. Bilingual, offline." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔔</text></svg>">
+<style>
+  :root {
+    --gold: #e8c58a;
+    --gold-soft: rgba(232,197,138,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(30,22,14,.72);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#080706; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(232,197,138,.13), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(110,80,52,.22), transparent 62%),
+      radial-gradient(620px 420px at 14% 102%, rgba(150,120,90,.08), transparent 60%),
+      #080706;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(232,197,138,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(232,197,138,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(232,197,138,.22); box-shadow:0 0 16px rgba(232,197,138,.25); }
+
+  [data-lang="zh-TW"] .en-copy { display:none !important; }
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.2rem, 8vw, 3.6rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #e8c58a 28%, #c39a5e 58%, #77572f 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(232,197,138,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.8em; color:rgba(232,197,138,.55); font-size:.9rem; }
+  article p.coda { text-indent:0; text-align:center; color:var(--gold); font-size:.95rem; letter-spacing:.08em; margin-bottom:.9em; }
+  article p.coda:last-child { margin-top:1.8em; color:rgba(243,237,224,.7); font-size:.9rem; font-style:italic; }
+
+  .note { max-width:760px; margin:26px auto 0; font-size:.74rem; line-height:1.9; color:rgba(243,237,224,.42); text-align:center; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; }
+
+  footer { margin-top:44px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 22px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:1rem; line-height:1.96; } header.hero { padding:40px 8px 22px; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/the-black-at-the-pour-gate/"><span class="zh-copy">前篇《浇口上的黑》</span><span class="en-copy">Prev · “The Black at the Pour Gate”</span></a>
+      <a href="/caesura/story/atlas/"><span class="zh-copy">余响索引</span><span class="en-copy">Motif Atlas</span></a>
+      <a href="/caesura/story/anthology/"><span class="zh-copy">余响集</span><span class="en-copy">The Aftermath</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <a href="/caesura/tutorial/"><span class="zh-copy">教程</span><span class="en-copy">Tutorial</span></a>
+      <a href="/caesura/"><span class="zh-copy">游戏</span><span class="en-copy">Game</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>余响集</b> · 第九十三篇</p>
+    <p class="kicker en-copy">Short story · <b>The Aftermath</b> · No. 93</p>
+    <h1 class="zh-copy">模上的第二道指印</h1>
+    <h1 class="en-copy">The Second Print on the Mould</h1>
+    <p class="subtitle zh-copy">回廊钟第39年 · 铸钟坊 · 空泥壳里留住的两下</p>
+    <p class="subtitle en-copy">The 39th year of the Arcade — the casting yard, and two pressures kept in an empty shell</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 6 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 零网络</p>
+    <p class="meta en-copy">about 6 minutes · same world as the <a href="/caesura/codex/">codex</a> · fully offline</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+<p>第四天，阿汐没有带桶，只带了一片碎泥壳。</p>
+<p>是守坊人从炉灰里捡出来的：指甲大，边缘焦黑，内壁上还留着浇口的一小段。</p>
+<p>她把它翻过来，凑近门口的光。</p>
+
+<div class="beat">· · ·</div>
+
+<p>泥壳里面有一道指印。</p>
+<p>不是浇口上那圈烟——是指纹，一圈一圈，按在泥还没硬的地方，按得很深。</p>
+<p>她问：这是谁的？</p>
+<p>守坊人说：第二道。</p>
+
+<div class="beat">· · ·</div>
+
+<p>他说：第一道是刻蜡的人按的。蜡钟刻好，裹泥之前，她把手按在泥上，像跟它说：你替我站在这儿。</p>
+<p>第二道是烧火的人按的。火起来以后，蜡从浇口走，她怕泥壳撑不住，就在外面按了一下——按的时候泥还软；按完，泥就硬了。</p>
+<p>阿汐问：她按的是外面，怎么印在里面？</p>
+<p>他说：泥壳是有厚度的。她按下去的力，穿过去了。人以为自己按的是表面，其实按的是自己担心的那一整块。</p>
+
+<div class="beat">· · ·</div>
+
+<p>阿汐把自己的手指按在那道印旁边。纹路不一样，深浅却差不多。</p>
+<p>她问：铜来了以后呢？</p>
+<p>守坊人说：铜来了，里面填满，谁也看不见；泥壳敲碎的时候，连这道印也一起碎。</p>
+<p>她问：那它为什么还在？</p>
+<p>他说：因为铜没有来。空着的东西，才把按上去的东西留住。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她把碎泥壳夹进薄簿里。守坊人说：别夹，一压就碎。</p>
+<p>她说：那就让它夹着。簿子是空的，正好装一个没铸出来的东西。</p>
+<p>她在昨夜那行下面添了一句：<strong>第九十二口，留了两道指印，未铸。</strong></p>
+
+<p class="coda">有些东西不是被留下来，是被「没发生」留下来。</p>
+<p class="coda">铜没来，泥壳没碎，那道印就还在——它证明的不是钟，是有人曾经担心过这只钟。</p>
+<p class="coda">止音纪元没有结束。它又多了一层：空的地方不只是空，它还替某个用力按过的人，保存了那一下。</p>
+    </div>
+    <div class="en-copy">
+<p>On the fourth day Axi brought no bucket. She brought a shard of clay shell.</p>
+<p>The yard-keeper had picked it out of the furnace ash: the size of a fingernail, its edge scorched black, a short piece of the pour gate still on its inner wall.</p>
+<p>She turned it over and held it up to the light at the door.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Inside the shell there was a fingerprint.</p>
+<p>Not the ring of smoke at the gate — a print, ridge upon ridge, pressed into the clay while it was still soft, pressed deep.</p>
+<p>She asked: whose is it?</p>
+<p>The yard-keeper said: the second one.</p>
+
+<div class="beat">· · ·</div>
+
+<p>He said: the first was pressed by the wax-carver. When the wax bell was finished, before the clay went on, she put her hand on the clay, as if to tell it: stand here for me.</p>
+<p>The second was pressed by the fire-keeper. Once the fire was up and the wax was running out through the gate, she was afraid the shell would not hold; she pressed it from outside. The clay was still soft. When she took her hand away, it hardened.</p>
+<p>Axi asked: she pressed the outside. How did the print get inside?</p>
+<p>He said: clay has thickness. The force of her hand went through. People think they are pressing a surface; really they are pressing the whole block they are afraid for.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Axi set her finger beside the print. The ridges were different; the depth was almost the same.</p>
+<p>She asked: and when the bronze comes?</p>
+<p>The yard-keeper said: when the bronze comes the inside is filled and no one sees it; when the shell is broken, the print breaks with it.</p>
+<p>She asked: then why is it still here?</p>
+<p>He said: because the bronze never came. Only empty things keep what is pressed into them.</p>
+
+<div class="beat">· · ·</div>
+
+<p>She slipped the shard into the thin ledger. The yard-keeper said: don't, one press and it will break.</p>
+<p>She said: let it. The ledger is empty too. It can hold one thing that was never cast.</p>
+<p>Beneath the line from the night before she added: <strong>the ninety-second bell: two prints left in the clay, not cast.</strong></p>
+
+<p class="coda">Some things are not kept. They are kept by what never happened.</p>
+<p class="coda">No bronze came, the shell was not broken, and the print is still there — proving not a bell, but that someone once feared for one.</p>
+<p class="coda">The age of hush has not ended. It has gained one more layer: an empty place is not only empty. It keeps, for someone who pressed hard, the pressure of that one moment.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">本篇为《余响集》双语对照 · 人工闸定稿 · 零网络 · 与<a href="/caesura/codex/">世界谱</a>同源世界观。<a href="/caesura/story/anthology/">全集：《余响集》</a> · <a href="/caesura/story/atlas/">母题检索：余响索引</a></span>
+    <span class="en-copy">“The Aftermath,” bilingual, offline, human-gated — same world as the <a href="/caesura/codex/">codex</a>. <a href="/caesura/story/anthology/">All stories</a> · <a href="/caesura/story/atlas/">Motif Atlas</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/the-one-left-empty/">篇九十 · 空着的一格</a> · <a href="/caesura/story/the-bell-not-cast/">篇九十一 · 未铸之钟</a> · <a href="/caesura/story/the-black-at-the-pour-gate/">篇九十二 · 浇口上的黑</a> · <a href="/caesura/story/the-second-print-on-the-mould/">篇九十三 · 模上的第二道指印</a> · <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/story/atlas/">余响索引</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/the-wind-writes-on-the-ash/">No. 89 · The Wind Writes on the Ash</a> · <a href="/caesura/story/the-one-left-empty/">No. 90 · The One Left Empty</a> · <a href="/caesura/story/the-bell-not-cast/">No. 91 · The Bell Not Cast</a> · <a href="/caesura/story/the-black-at-the-pour-gate/">No. 92 · The Black at the Pour Gate</a> · <a href="/caesura/story/anthology/">All stories</a> · <a href="/caesura/story/atlas/">Motif Atlas</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'en' ? 'en-US' : (lang === 'zh-TW' ? 'zh-TW' : 'zh-CN'));
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+    if (window.__caesuraZhTW) {
+      if (lang === 'zh-TW' && window.__caesuraZhTW.applyToDocument) window.__caesuraZhTW.applyToDocument();
+      else if (lang === 'zh' && window.__caesuraZhTW.restoreOriginals) window.__caesuraZhTW.restoreOriginals();
+    }
+    btn.textContent = lang === 'zh' ? '繁體' : (lang === 'zh-TW' ? 'EN' : '简体');
+  }
+  if (btn) btn.addEventListener('click', function () {
+    var cur = root.getAttribute('data-lang'); apply(cur === 'zh' ? 'zh-TW' : (cur === 'zh-TW' ? 'en' : 'zh'));
+  });
+  apply(saved === 'en' || saved === 'zh-TW' ? saved : 'zh');
+})();
+</script>
+<script defer src="../../tracker.js"></script>
+<script defer src="/caesura/zh-tw-converter.js"></script>
+<script defer src="/caesura/read-progress.js"></script>
+</body>
+</html>

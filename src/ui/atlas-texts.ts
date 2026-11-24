@@ -4661,5 +4661,81 @@ export const STORY_CHAPTERS: StoryChapter[] = [
 <p class="coda">Some bells are a layer of smoke, a ring of black, a shape burned hollow; they never rang, and yet they left “there was once” in the narrowest place — the pour gate is only a fist wide, and it remembers a whole bell.</p>
 <p class="coda">The age of hush has not ended. It has only gained one more piece of evidence: the furnace banked low, the clay shells closed, the black on the rim left unscrubbed. When someone asks, the yard-keeper says: that is not dirt. That is a bell’s signature.</p>`,
   },
+  {
+    no: 93,
+    zhTitle: "模上的第二道指印",
+    enTitle: "The Second Print on the Mould",
+    zh: `<p>第四天，阿汐没有带桶，只带了一片碎泥壳。</p>
+<p>是守坊人从炉灰里捡出来的：指甲大，边缘焦黑，内壁上还留着浇口的一小段。</p>
+<p>她把它翻过来，凑近门口的光。</p>
+
+<div class="beat">· · ·</div>
+
+<p>泥壳里面有一道指印。</p>
+<p>不是浇口上那圈烟——是指纹，一圈一圈，按在泥还没硬的地方，按得很深。</p>
+<p>她问：这是谁的？</p>
+<p>守坊人说：第二道。</p>
+
+<div class="beat">· · ·</div>
+
+<p>他说：第一道是刻蜡的人按的。蜡钟刻好，裹泥之前，她把手按在泥上，像跟它说：你替我站在这儿。</p>
+<p>第二道是烧火的人按的。火起来以后，蜡从浇口走，她怕泥壳撑不住，就在外面按了一下——按的时候泥还软；按完，泥就硬了。</p>
+<p>阿汐问：她按的是外面，怎么印在里面？</p>
+<p>他说：泥壳是有厚度的。她按下去的力，穿过去了。人以为自己按的是表面，其实按的是自己担心的那一整块。</p>
+
+<div class="beat">· · ·</div>
+
+<p>阿汐把自己的手指按在那道印旁边。纹路不一样，深浅却差不多。</p>
+<p>她问：铜来了以后呢？</p>
+<p>守坊人说：铜来了，里面填满，谁也看不见；泥壳敲碎的时候，连这道印也一起碎。</p>
+<p>她问：那它为什么还在？</p>
+<p>他说：因为铜没有来。空着的东西，才把按上去的东西留住。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她把碎泥壳夹进薄簿里。守坊人说：别夹，一压就碎。</p>
+<p>她说：那就让它夹着。簿子是空的，正好装一个没铸出来的东西。</p>
+<p>她在昨夜那行下面添了一句：<strong>第九十二口，留了两道指印，未铸。</strong></p>
+
+<p class="coda">有些东西不是被留下来，是被「没发生」留下来。</p>
+<p class="coda">铜没来，泥壳没碎，那道印就还在——它证明的不是钟，是有人曾经担心过这只钟。</p>
+<p class="coda">止音纪元没有结束。它又多了一层：空的地方不只是空，它还替某个用力按过的人，保存了那一下。</p>`,
+    en: `<p>On the fourth day Axi brought no bucket. She brought a shard of clay shell.</p>
+<p>The yard-keeper had picked it out of the furnace ash: the size of a fingernail, its edge scorched black, a short piece of the pour gate still on its inner wall.</p>
+<p>She turned it over and held it up to the light at the door.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Inside the shell there was a fingerprint.</p>
+<p>Not the ring of smoke at the gate — a print, ridge upon ridge, pressed into the clay while it was still soft, pressed deep.</p>
+<p>She asked: whose is it?</p>
+<p>The yard-keeper said: the second one.</p>
+
+<div class="beat">· · ·</div>
+
+<p>He said: the first was pressed by the wax-carver. When the wax bell was finished, before the clay went on, she put her hand on the clay, as if to tell it: stand here for me.</p>
+<p>The second was pressed by the fire-keeper. Once the fire was up and the wax was running out through the gate, she was afraid the shell would not hold; she pressed it from outside. The clay was still soft. When she took her hand away, it hardened.</p>
+<p>Axi asked: she pressed the outside. How did the print get inside?</p>
+<p>He said: clay has thickness. The force of her hand went through. People think they are pressing a surface; really they are pressing the whole block they are afraid for.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Axi set her finger beside the print. The ridges were different; the depth was almost the same.</p>
+<p>She asked: and when the bronze comes?</p>
+<p>The yard-keeper said: when the bronze comes the inside is filled and no one sees it; when the shell is broken, the print breaks with it.</p>
+<p>She asked: then why is it still here?</p>
+<p>He said: because the bronze never came. Only empty things keep what is pressed into them.</p>
+
+<div class="beat">· · ·</div>
+
+<p>She slipped the shard into the thin ledger. The yard-keeper said: don't, one press and it will break.</p>
+<p>She said: let it. The ledger is empty too. It can hold one thing that was never cast.</p>
+<p>Beneath the line from the night before she added: <strong>the ninety-second bell: two prints left in the clay, not cast.</strong></p>
+
+<p class="coda">Some things are not kept. They are kept by what never happened.</p>
+<p class="coda">No bronze came, the shell was not broken, and the print is still there — proving not a bell, but that someone once feared for one.</p>
+<p class="coda">The age of hush has not ended. It has gained one more layer: an empty place is not only empty. It keeps, for someone who pressed hard, the pressure of that one moment.</p>`,
+  },
+
 ]
 

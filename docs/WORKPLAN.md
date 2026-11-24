@@ -693,3 +693,4 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | KI-747 | **与 Clash Verge 解绑 · 默认直连**：client 只读项目专用 CAESURA_LLM_PROXY（不读系统代理变量）+ 移除内置 LLM_DEFAULT_PROXY + via proxy 类型同步 + 5 脚本注释更新 · proxy-decouple.test.ts 5 腿 + 降级契约 8 腿 | KI-747 |
 | KI-748 | **说明书补全 L 语言热键**：PLAYER_MANUAL zh/en「开局导航」各加「语言切换 / Language」一行（L 三态循环 + 面板开着先收起）+ lang-key.test.ts 1 腿 | KI-748 |
 | KI-749 | **故事页中文去夹英**：ledger 中文可见块 Meg→麦格（DLG_MEG ID 保留）+ i18n-lang 1 腿 | KI-749 |
+| KI-750 | **第 93 篇《模上的第二道指印》**：双语新故事 + 全集/索引/控制台/教程/首页/README/i18n 全套对齐；atlas 生成器重算 93 篇；新故事测试 1 个 | KI-750 |

@@ -20,8 +20,8 @@ import {
 describe('sim-real-visitor 纯函数', () => {
   it('storySlugs = 92 项（ORDER 全量），过滤后 = 91 个真实页面', () => {
     const all = storySlugs()
-    expect(all.length).toBe(92)
-    expect(all.filter(Boolean).length).toBe(91)
+    expect(all.length).toBe(93)
+    expect(all.filter(Boolean).length).toBe(92)
   })
 
   it('publicPageList：去重且包含 anthology / codex / cast / admin', () => {
@@ -34,7 +34,7 @@ describe('sim-real-visitor 纯函数', () => {
     expect(pages).toContain('/caesura/admin/')
     expect(pages).toContain('/caesura/story/the-salt-is-there/')
     expect(pages).toContain('/caesura/story/two-lines/')
-    expect(listStoryPages().length).toBe(91)
+    expect(listStoryPages().length).toBe(92)
   })
 
   it('extractInnerLinks：只返回 /caesura/ 唯一内链', () => {

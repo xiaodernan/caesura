@@ -38,7 +38,7 @@ describe('KI-654 · 阅读进度 + 下一篇入口（KI-645 行动 #4）', () =>
         .filter((d) => d.isDirectory() && d.name !== 'anthology' && d.name !== 'atlas')
         .map((d) => `${d.name}/index.html`)
     ]
-    expect(pages, 'expected salt root + 91 slugs').toHaveLength(92)
+    expect(pages, 'expected salt root + 92 slugs').toHaveLength(93)
     for (const rel of pages) {
       const s = read(resolve(storyDir, rel))
       expect(s, `missing read-progress in ${rel}`).toContain('data')
@@ -51,7 +51,7 @@ describe('KI-654 · 阅读进度 + 下一篇入口（KI-645 行动 #4）', () =>
     const m = s.match(/var ORDER = \[([\s\S]*?)\];/)
     expect(m, 'ORDER block not found').toBeTruthy()
     const slugs = [...m![1].matchAll(/slug: '([^']*)'/g)].map((x) => x[1])
-    expect(slugs).toHaveLength(92)
+    expect(slugs).toHaveLength(93)
     expect(slugs[0]).toBe('')           // 篇一《盐》= /caesura/story/
     expect(slugs[1]).toBe('unnamed-stone')
     expect(slugs[25]).toBe('beyond-the-line')
@@ -121,8 +121,9 @@ describe('KI-654 · 阅读进度 + 下一篇入口（KI-645 行动 #4）', () =>
     expect(slugs[89]).toBe('the-one-left-empty')
     expect(slugs[90]).toBe('the-bell-not-cast')
     expect(slugs[91]).toBe('the-black-at-the-pour-gate')
+    expect(slugs[92]).toBe('the-second-print-on-the-mould')
     const atlas = read(resolve(ROOT, 'src/ui/atlas-texts.ts'))
-    expect((atlas.match(/no: \d+,/g) || []).length).toBe(92)
+    expect((atlas.match(/no: \d+,/g) || []).length).toBe(93)
   })
 
   it('双语标签与本机记账键在源码里', () => {

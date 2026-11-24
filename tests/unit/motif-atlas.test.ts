@@ -20,11 +20,11 @@ describe('Motif Atlas 余响索引（story/atlas/index.html）', () => {
     expect(out).toContain('motif-atlas: OK')
   })
 
-  it('92 张卡片 · href 与 ORDER 一一对应', () => {
+  it('93 张卡片 · href 与 ORDER 一一对应', () => {
     const hrefs = [...HTML.matchAll(/<a class="card" href="([^"]+)"/g)].map((m) => m[1])
-    expect(hrefs).toHaveLength(92)
+    expect(hrefs).toHaveLength(93)
     const slugs = [...ORDER.matchAll(/slug: '([^']*)'/g)].map((m) => m[1])
-    expect(slugs).toHaveLength(92)
+    expect(slugs).toHaveLength(93)
     for (let i = 0; i < slugs.length; i++) {
       const expected = '/caesura/story/' + (slugs[i] ? slugs[i] + '/' : '')
       expect(hrefs[i], `card #${i + 1}`).toBe(expected)
@@ -44,6 +44,9 @@ describe('Motif Atlas 余响索引（story/atlas/index.html）', () => {
     expect(card92![1].split(' ')).toContain('bell')
     expect(card92![1].split(' ')).toContain('empty')
     expect(card92![1].split(' ')).toContain('line')
+    const card93 = HTML.match(/class="card" href="\/caesura\/story\/the-second-print-on-the-mould\/" data-no="93" data-motifs="([^"]*)"/)
+    expect(card93, '第93篇卡片缺失').toBeTruthy()
+    for (const m of ['bell', 'empty', 'line', 'ledger']) expect(card93![1].split(' ')).toContain(m)
     for (const m of HTML.matchAll(/data-no="\d+" data-motifs="([^"]*)"/g)) {
       const tags = m[1].split(' ').filter(Boolean)
       expect(tags.length, `card ${m[0].slice(0, 30)} 标签数`).toBeGreaterThan(0)
