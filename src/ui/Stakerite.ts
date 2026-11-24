@@ -62,6 +62,7 @@ const PLAYER_MANUAL: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">恩希尔（未竟厅 · 终章）</span><span class="note">终局首领；先拆他的收尾「指挥棒」，然后在每一个小节边界做闪避</span></div>
 
 <h2>开局导航</h2>
+<div class="row"><span class="name">语言切换</span><span class="note">在世界里按 L：简体 → 繁体 → 英文，三态循环；面板开着时先收起再按，免得半屏旧字半屏新字</span></div>
 <div class="row"><span class="name">调音桩</span><span class="note">Tab 开地图（看过哪片区）；再按一次收起；档案室 / 终末·叹息</span></div>
 <div class="row"><span class="name">存档</span><span class="note">调音桩前按 E 休息并保存；首领倒下会自动存</span></div>
 <div class="row"><span class="name">配方</span><span class="note">Tab → 调音 → 查看派生面板（防御 / 负重上限 / 暴击率 / 暴击倍数 / 过载</span></div>
@@ -103,6 +104,7 @@ const PLAYER_MANUAL: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">Hersil (Unfinished Hall · finale)</span><span class="note">The finale. Break the baton first, then ride his 3/4 rhythm — every downbeat is yours</span></div>
 
 <h2>Navigation</h2>
+<div class="row"><span class="name">Language</span><span class="note">Press L in the world: Simplified → Traditional → English, cycling three ways; close any panel first so you don't end up with half old text and half new</span></div>
 <div class="row"><span class="name">Tuning peg</span><span class="note">Tab toggles map · Map shows visited regions and where to go next</span></div>
 <div class="row"><span class="name">Save</span><span class="note">Rest at a peg (button E); boss death autosaves</span></div>
 <div class="row"><span class="name">Build stats</span><span class="note">Tab → Tune → derived stats: defense / load cap / crit rate / crit mul / overdrive</span></div>

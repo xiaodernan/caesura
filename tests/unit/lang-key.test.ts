@@ -67,4 +67,13 @@ describe('KI-742 · shouldCycleLang 真值表', () => {
     const input = read('src/core/Input.ts')
     expect(input).toContain('get isCapturing()')
   })
+
+  it('L 热键写进了游戏内说明书（PLAYER_MANUAL 中英两半都教）', () => {
+    const stak = read('src/ui/Stakerite.ts')
+    const manual = stak.slice(stak.indexOf('const PLAYER_MANUAL'), stak.indexOf('const PLAYER_ATLAS') > 0 ? stak.indexOf('const PLAYER_ATLAS') : undefined)
+    expect(manual).toContain('语言切换')
+    expect(manual).toContain('按 L')
+    expect(manual).toContain('Language')
+    expect(manual).toContain('Press L in the world')
+  })
 })
