@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "611645bd0b901f83b154d82ba52394ecefa7ec44",
+  "head": "fb3e2a8918e0bacc6d27af6c9c1077bafde96cb1",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-24T23:28:12Z",
+  "subject": "fix: KI-753 等待 artifact 元数据可见再 deploy（Found 0 竞态）",
+  "date": "2026-11-25T07:33:27+08:00",
   "kv": {
     "KI.rows": 671,
     "KI.Implemented": 492,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/611645bd0b901f83b154d82ba52394ecefa7ec44",
+    "url": "https://github.com/xiaodernan/caesura/commit/fb3e2a8918e0bacc6d27af6c9c1077bafde96cb1",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
