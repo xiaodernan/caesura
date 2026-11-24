@@ -55,6 +55,9 @@ describe('index.html：启封仪典 · 止音启明（Phase F-42）', () => {
     const css = HTML.slice(HTML.indexOf('#quickstart-dock {'), HTML.indexOf('#quickstart-dock {') + 500)
     expect(css).toContain('z-index:20')
     expect(css).toContain('position:fixed')
+    // KI-752：说明书入口贴左下，避免与标题屏右下角的固定「开始」按钮互相遮盖。
+    expect(css).toContain('left:14px')
+    expect(css).not.toContain('right:14px')
     expect(readFileSync(fileURLToPath(new URL('../../tutorial/index.html', import.meta.url)), 'utf8')).toContain('快速上手')
   })
 })

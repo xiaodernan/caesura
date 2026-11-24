@@ -54,9 +54,11 @@
           -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; }
   #boot small { font-size:11px; letter-spacing:.72em; text-indent:.72em; color: rgba(201,180,88,.45); }
   @media (prefers-reduced-motion: reduce) { #boot::after { animation:none; } }
-  /* KI-718：打开项目第一眼就能看到「简明说明书」。固定在右下角，不随启动画面消失；
-     z-index 高于 boot/hud，但只在按钮本体接收指针事件，不遮挡游戏操作。 */
-  #quickstart-dock { position:fixed; right:14px; bottom:14px; z-index:20; display:flex; align-items:center; gap:8px;
+  /* KI-718：打开项目第一眼就能看到「简明说明书」。固定在左下角，不随启动画面消失；
+     z-index 高于 boot/hud，但只在按钮本体接收指针事件，不遮挡游戏操作。
+     KI-752：原先固定在右下角，与标题屏的「开始·直接入场」按钮（同样贴右下、z=70）位置重合，
+     入口被按钮盖住；移到左下角，首屏两侧各留一个入口，互不遮盖。 */
+  #quickstart-dock { position:fixed; left:14px; bottom:14px; z-index:20; display:flex; align-items:center; gap:8px;
           padding:8px 12px; border:1px solid rgba(201,180,88,.42); border-radius:3px;
           background:rgba(9,11,17,.86); color:#e6d79b; text-decoration:none;
           font:12px/1.35 "Songti SC", "STSong", Georgia, serif; letter-spacing:.06em;
@@ -64,7 +66,7 @@
   #quickstart-dock:hover, #quickstart-dock:focus-visible { border-color:#e6d79b; transform:translateY(-2px); outline:none; }
   #quickstart-dock .qs-mark { font:600 11px/1 ui-monospace, monospace; color:#ffb86b; letter-spacing:0; }
   #quickstart-dock .qs-sub { display:block; font-size:10px; color:rgba(230,215,155,.62); letter-spacing:.02em; }
-  @media (max-width:560px) { #quickstart-dock { right:8px; bottom:8px; padding:6px 9px; font-size:11px; } }
+  @media (max-width:560px) { #quickstart-dock { left:8px; bottom:8px; padding:6px 9px; font-size:11px; } }
   @media (prefers-reduced-motion: reduce) { #quickstart-dock { transition:none; } }
   html[data-lang="en"] .zh-i18n { display:none }
   html[data-lang="zh"] .en-i18n { display:none }
