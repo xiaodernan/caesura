@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "1266bfdecafe9741bdfddde28fbe8a7c558305ce",
+  "head": "e5c43575772287a496f846ba0de7626f4c63dbc1",
   "branch": "master",
-  "subject": "feat: KI-748 游戏内说明书补全 L 语言热键（KI-742 玩家可见闭环）",
-  "date": "2026-11-25T04:18:14+08:00",
+  "subject": "site-latest: 1266bfd (post-rebase reconcile)",
+  "date": "2026-11-25T04:20:03+08:00",
   "kv": {
     "KI.rows": 666,
     "KI.Implemented": 487,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/1266bfdecafe9741bdfddde28fbe8a7c558305ce",
+    "url": "https://github.com/xiaodernan/caesura/commit/e5c43575772287a496f846ba0de7626f4c63dbc1",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
