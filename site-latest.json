@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "e6477cd55e7960db9baac585789abe0245f75264",
+  "head": "af3319f9524b1c4834b1aa54b075cec65058f0fe",
   "branch": "master",
-  "subject": "site-latest: a8863ab (post-rebase reconcile)",
-  "date": "2026-11-25T07:04:41+08:00",
+  "subject": "fix: KI-753 Pages 部署上传前清理旧 attempt 同名 artifact（竞态根治）",
+  "date": "2026-11-25T07:27:08+08:00",
   "kv": {
-    "KI.rows": 670,
-    "KI.Implemented": 491,
+    "KI.rows": 671,
+    "KI.Implemented": 492,
     "KI.Partial": 169,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/e6477cd55e7960db9baac585789abe0245f75264",
+    "url": "https://github.com/xiaodernan/caesura/commit/af3319f9524b1c4834b1aa54b075cec65058f0fe",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
