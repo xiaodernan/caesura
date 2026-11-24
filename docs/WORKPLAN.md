@@ -692,3 +692,4 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | KI-746 | **英文标题出身卡去中文（Partial）**：22 个中英键补齐；`titleCards()` 英文按 `nameKey` 解析，简介／被动由出身键派生，简体保留原始字段、繁体从原始字段即时转换；缺键回落与四类合成数据契约不变；既有 `TitleScreen` 按当前语言失效缓存并重算。共享树 4 文件 65 条绿、tsc 0；ASCII pre 定向 5 文件 74 条 4 红，四红均为本批断言；post1 定向 74 条绿、tsc 0。post2 validate 0 ERROR 2 WARN、build＋check-dist 0；post2 doc 因悬号引用 4 红，撤引用后 post3 87 条绿。r4 误占旧 4173 端口不算平面证据；r5 独立 4184 端口四段语言检查全绿，英文五卡 CJK=0、无未解析键、全在视口且无横向裁切，中英两张截图已看、控制台无脚本异常。post4 full/cov 待归；世界提示另批承接，未改 schema | KI-746 |
 | KI-747 | **与 Clash Verge 解绑 · 默认直连**：client 只读项目专用 CAESURA_LLM_PROXY（不读系统代理变量）+ 移除内置 LLM_DEFAULT_PROXY + via proxy 类型同步 + 5 脚本注释更新 · proxy-decouple.test.ts 5 腿 + 降级契约 8 腿 | KI-747 |
 | KI-748 | **说明书补全 L 语言热键**：PLAYER_MANUAL zh/en「开局导航」各加「语言切换 / Language」一行（L 三态循环 + 面板开着先收起）+ lang-key.test.ts 1 腿 | KI-748 |
+| KI-749 | **故事页中文去夹英**：ledger 中文可见块 Meg→麦格（DLG_MEG ID 保留）+ i18n-lang 1 腿 | KI-749 |

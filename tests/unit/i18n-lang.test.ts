@@ -98,6 +98,15 @@ describe('i18n Lang 双字典同构', () => {
     }
   })
 
+  it('故事公开页的中文可见块不夹英文（Meg→麦格 · data-index 属性非可见不算）', () => {
+    const ledger = readFileSync(resolve(fileURLToPath(new URL('../../story/ledger/index.html', import.meta.url))), 'utf8')
+    // subtitle / note 等 zh-copy 可见块里不该出现裸 "Meg"（技术 ID DLG_MEG 除外）
+    const zhVisible = [...ledger.matchAll(/class="[^"]*zh-copy[^"]*"[^>]*>([\s\S]*?)<\/(?:p|span|div|h[1-6])>/g)]
+      .map((m) => m[1]).join(' ')
+    expect(zhVisible.replace(/DLG_MEG/g, ''), '中文可见块不该有裸 Meg（应为「麦格」）').not.toMatch(/\bMeg\b/)
+    expect(ledger, '中文侧应有 canon 译名「麦格」').toContain('麦格')
+  })
+
   it('每个 t() 键都能在 EN/ZH 至少一侧读出字符串（不吐 key 兜底）', () => {
     const zh = keysOf(dictBlock('ZH'))
     for (const k of zh) {
