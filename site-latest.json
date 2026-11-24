@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "3df92a1bc64772cfecabdc0fe974d2dc83e51479",
+  "head": "9aaa42eff02d9b880ea5d3c4ef1f195687c1b446",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-24T21:15:26Z",
+  "subject": "feat: KI-750 第93篇《模上的第二道指印》· 93篇全套对齐",
+  "date": "2026-11-25T06:01:08+08:00",
   "kv": {
-    "KI.rows": 667,
-    "KI.Implemented": 488,
+    "KI.rows": 668,
+    "KI.Implemented": 489,
     "KI.Partial": 169,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/3df92a1bc64772cfecabdc0fe974d2dc83e51479",
+    "url": "https://github.com/xiaodernan/caesura/commit/9aaa42eff02d9b880ea5d3c4ef1f195687c1b446",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
