@@ -144,6 +144,10 @@ const CSS = `
 #title [data-tip]{position:relative}
 #title [data-tip]::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 1.1vh);transform:translate(-50%,.6vh);background:rgba(14,12,10,.96);border:1px solid rgba(201,180,88,.45);color:#e8dfc2;font-family:Georgia,"Songti SC","STSong",serif;font-size:1.28vh;letter-spacing:.1em;line-height:1.5;padding:.55vh 1.1vh;border-radius:.5vh;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .18s ease,transform .18s ease;z-index:40;box-shadow:0 .4vh 1.4vh rgba(0,0,0,.55)}
 #title [data-tip]:hover::after,#title [data-tip]:focus-visible::after{opacity:1;transform:translate(-50%,0)}
+/* KI-751：data-tip 的 position:relative 与 .qs-start 的 fixed 同特异度且更靠后，
+   会把固定开始按钮打回文档流，压住上一行「新来的人…」提示。提高特异度钉住 fixed，
+   同时保留按钮自身的 tooltip 定位上下文（不能把 :not(.qs-start) 加到 data-tip 上）。 */
+#title button.qs-start{position:fixed}
 #title .slot{position:relative}
 @media (prefers-reduced-motion: reduce){#title *,#title *::before,#title *::after{animation:none !important;transition:none !important}}
 #title .lang-chip{position:absolute;top:26px;left:26px;z-index:5;background:rgba(9,10,15,.4);color:#c9b258;

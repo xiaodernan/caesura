@@ -776,4 +776,16 @@ describe('标题屏 · 按键教学说明 data-tip（KI-627）', () => {
     expect(css).toContain('#title [data-tip]:focus-visible::after')
     t.dispose()
   })
+
+  it('KI-751：教学 tooltip 的 position:relative 不许把固定开始按钮打回文档流', async () => {
+    const { t } = await screen(() => roster())
+    const head = (globalThis as unknown as { document: { head: FakeEl } }).document.head
+    const css = head.children.map((c) => (c as unknown as { textContent: string }).textContent).join('\n')
+    const tipPos = css.indexOf('#title [data-tip]{position:relative}')
+    const startPos = css.indexOf('#title button.qs-start{position:fixed}')
+    expect(tipPos, 'tooltip 定位规则还在').toBeGreaterThanOrEqual(0)
+    expect(startPos, '固定开始按钮的高特异度兜底还在').toBeGreaterThanOrEqual(0)
+    expect(startPos, '兜底必须写在 data-tip 之后，否则同特异度会被覆盖').toBeGreaterThan(tipPos)
+    t.dispose()
+  })
 })
