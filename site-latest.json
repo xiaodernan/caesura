@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "e5c43575772287a496f846ba0de7626f4c63dbc1",
+  "head": "8b21f70c8c634d18a9fd885c66724a1db6f8ad70",
   "branch": "master",
-  "subject": "site-latest: 1266bfd (post-rebase reconcile)",
-  "date": "2026-11-25T04:20:03+08:00",
+  "subject": "feat: KI-749 故事页中文去中英夹杂（ledger Meg→麦格）",
+  "date": "2026-11-25T05:12:54+08:00",
   "kv": {
-    "KI.rows": 666,
-    "KI.Implemented": 487,
+    "KI.rows": 667,
+    "KI.Implemented": 488,
     "KI.Partial": 169,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/e5c43575772287a496f846ba0de7626f4c63dbc1",
+    "url": "https://github.com/xiaodernan/caesura/commit/8b21f70c8c634d18a9fd885c66724a1db6f8ad70",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
