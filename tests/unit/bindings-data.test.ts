@@ -518,11 +518,12 @@ describe('KI-391 派键的来路：不许是名册长度的一份抄本', () => 
   it('一份 src 名册的内容不许被字面数组摆在它对面——主语走得到主人的归丙，整份逐枚相等而主语走不到的归乙（KI-393 丙／乙）', () => {
     const root = fileURLToPath(new URL('../../', import.meta.url))
     const NUL = String.fromCharCode(0)
+    const 纯串形 = new RegExp('^' + NUL + '(?:\\s*,\\s*' + NUL + ')*\\s*,?\\s*$')
     /** 数组体「整份都是字符串字面量」才算名册的形状：混合的、嵌套的、带计算的都请出去。
      *  先用一枚 NUL 把串身整段盖掉再看形状——嵌套数组会把括号留在形状里，一比就露出来。 */
     const 纯串 = (体: string): string[] | null => {
       const 掩 = 体.replace(/(['"`])(?:\\.|(?!\1)[^\\])*\1/g, NUL)
-      if (!new RegExp('^' + NUL + '(?:\\s*,\\s*' + NUL + ')*\\s*,?\\s*$').test(掩)) return null
+      if (!纯串形.test(掩)) return null
       const 出: string[] = []
       let 深 = 0, i = 0
       while (i < 体.length) {
@@ -535,9 +536,8 @@ describe('KI-391 派键的来路：不许是名册长度的一份抄本', () => 
       return new Set(出).size >= 3 ? 出 : null
     }
     /** 主人现读：`const NAME = [...]`，要求 `const` 那枚词本身在代码位上（注释里举例的那种不算） */
-    const 抽主 = (文: string): Map<string, string[]> => {
+    const 抽主 = (文: string, 表 = 码位(文)): Map<string, string[]> => {
       const 出 = new Map<string, string[]>()
-      const 表 = 码位(文)
       const RE = new RegExp('(?:const|let)\\s+(' + ID源 + ')\\s*(?::[^=\\n]{0,160})?=\\s*\\[', 'g')
       let m: RegExpExecArray | null
       while ((m = RE.exec(文)) !== null) {
@@ -557,11 +557,10 @@ describe('KI-391 派键的来路：不许是名册长度的一份抄本', () => 
     const 查重述 = (
       rel: string,
       文: string,
-      主人: Map<string, string[]>
+      主人: Map<string, string[]>,
+      表 = 码位(文)
     ): { 抄: string[]; 整抄: string[]; 瞎: string[]; 漏: string[]; 候选: number } => {
       const 抄: string[] = [], 整抄: string[] = [], 瞎: string[] = [], 漏: string[] = []
-      const 表 = 码位(文)
-      const 定义 = 本地定义(文)
       const 行号 = new Int32Array(文.length + 1)
       let n = 1
       for (let k = 0; k < 文.length; k++) { 行号[k] = n; if (第(文, k) === '\n') n++ }
@@ -570,24 +569,25 @@ describe('KI-391 派键的来路：不许是名册长度的一份抄本', () => 
       const 走到 = new Set<number>()
       let 候选 = 0
       const 链 = /^\s*\.\s*(?:not\.\s*)?(?:toEqual|toStrictEqual|arrayContaining|toContain)\s*\(\s*\[/
-      for (let i = 0; i < 文.length; i++) {
-        if (表[i] !== 1 || !文.startsWith('expect(', i)) continue
-        if (/[\w$.]/.test(第(文, i - 1))) continue
+      let i = 0
+      while ((i = 文.indexOf('expect(', i)) >= 0) {
         const 站 = i
+        i = 站 + 1
+        if (表[站] !== 1 || /[\w$.]/.test(第(文, 站 - 1))) continue
         走到.add(行(站))
         const 闭 = 配平(文, 表, 站 + 6)
         if (闭 < 0) { 瞎.push(`${rel}:${行(站)}（expect 配不出右括号）`); continue }
         const 尾 = 尾段(文, 闭)
         const m链 = 链.exec(尾.段)
-        if (!m链) { i = 闭; continue }
+        if (!m链) { i = 闭 + 1; continue }
         const 开 = 尾.基 + m链.index + m链[0].length - 1
         const 闭2 = 配平(文, 表, 开, '[', ']')
-        i = 闭2 < 0 ? 闭 : 闭2
+        i = (闭2 < 0 ? 闭 : 闭2) + 1
         if (闭2 < 0) { 瞎.push(`${rel}:${行(站)}（断言里那枚数组配不出右括号）`); continue }
         const 项 = 纯串(文.slice(开 + 1, 闭2))
         if (!项) continue
         候选++
-        const 可达 = 见过(定义, 主语段(文.slice(站 + 7, 闭), 文))
+        const 可达 = 见过(本地定义(文), 主语段(文.slice(站 + 7, 闭), 文))
         for (const [名, 主项] of 主人) {
           const 摆在对面 = 项.every((e) => 主项.includes(e))
           const 整份相等 = 项.length === 主项.length && 主项.every((e) => 项.includes(e))
@@ -633,6 +633,7 @@ describe('KI-391 派键的来路：不许是名册长度的一份抄本', () => 
     /* 真仓两趟：先把 src 里的主人收齐（主人只认 src——测试与脚本里那种本地数组是场景，不是账），
        再拿这份值域去量 tests／scripts／src 每一处断言实参位。 */
     const 主人 = new Map<string, string[]>()
+    const 源快照 = new Map<string, { 文: string; 表: Uint8Array }>()
     const 抄: string[] = [], 整抄: string[] = [], 瞎: string[] = [], 漏: string[] = []
     let 候选 = 0
     const 走 = (dir: string, 是主人档: boolean): void => {
@@ -640,10 +641,16 @@ describe('KI-391 派键的来路：不许是名册长度的一份抄本', () => 
         const rel = `${dir}/${e.name}`
         if (e.isDirectory()) { 走(rel, 是主人档); continue }
         if (!/\.ts$/.test(e.name)) continue
-        const 文 = readFileSync(`${root}${rel}`, 'utf8')
-        if (是主人档) { for (const [名, 项] of 抽主(文)) if (!主人.has(名)) 主人.set(名, 项); continue }
+        const 快照 = 源快照.get(rel)
+        const 文 = 快照?.文 ?? readFileSync(`${root}${rel}`, 'utf8')
+        if (是主人档) {
+          const 表 = 快照?.表 ?? 码位(文)
+          源快照.set(rel, { 文, 表 })
+          for (const [名, 项] of 抽主(文, 表)) if (!主人.has(名)) 主人.set(名, 项)
+          continue
+        }
         if (!/expect\s*\(/.test(文)) continue
-        const 报 = 查重述(rel, 文, 主人)
+        const 报 = 查重述(rel, 文, 主人, 快照?.表)
         抄.push(...报.抄); 整抄.push(...报.整抄); 瞎.push(...报.瞎); 漏.push(...报.漏); 候选 += 报.候选
       }
     }

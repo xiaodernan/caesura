@@ -124,9 +124,12 @@ const MOUSE_CODES: Record<number, string> = { 0: 'MouseLeft', 1: 'MouseMiddle', 
  * 一枚码的短名（给人看的那一份）。它是**唯一**一张换算表：`keyOf` 用它，菜单那一列的整组读数
  * 也用它（KI-344）——缩写规则一旦有第二份，同一把键就会在同一个屏幕上有两个名字。
  */
-export const codeLabel = (code: string): string => {
-  const mouse: Record<string, string> = { MouseLeft: '左键', MouseRight: '右键', MouseMiddle: '中键' }
-  if (mouse[code]) return mouse[code]
+export const codeLabelIn = (code: string, lang: 'zh' | 'en'): string => {
+  const mouse: Record<'zh' | 'en', Record<string, string>> = {
+    zh: { MouseLeft: '左键', MouseRight: '右键', MouseMiddle: '中键' },
+    en: { MouseLeft: 'LMB', MouseRight: 'RMB', MouseMiddle: 'MMB' }
+  }
+  if (mouse[lang][code]) return mouse[lang][code]
   if (code.startsWith('Key')) return code.slice(3)
   if (code.startsWith('Digit')) return code.slice(5)
   if (code === 'ControlLeft' || code === 'ControlRight') return 'Ctrl'
@@ -134,9 +137,11 @@ export const codeLabel = (code: string): string => {
   return code
 }
 
-export function keyOf(action: ActionName, binds: Binds = DEFAULT_BINDS): string | null {
+export const codeLabel = (code: string): string => codeLabelIn(code, 'zh')
+
+export function keyOf(action: ActionName, binds: Binds = DEFAULT_BINDS, lang: 'zh' | 'en' = 'zh'): string | null {
   const code = Object.keys(binds.keyboard).find((k) => binds.keyboard[k] === action) ?? null
-  return code === null ? null : codeLabel(code)
+  return code === null ? null : codeLabelIn(code, lang)
 }
 
 /* ---------------------------------------------------------------------------
@@ -212,7 +217,7 @@ export interface Bindings {
  * 过场一旦算作 overlay，它自己的时间就不再往前走（黑场永久停着）。所以这一格只夺**菜单读数**
  * （意图通道＋`preventDefault`），不夺**世界时间**，也不碰玩法那条闸门（`enabled`／`playLive` 各归各的主人）。
  */
-export const MENU_OWNERS = ['panel', 'map', 'descend', 'dialogue', 'title', 'cinematic'] as const
+export const MENU_OWNERS = ['panel', 'map', 'descend', 'dialogue', 'title', 'pause', 'cinematic'] as const
 export type MenuOwner = typeof MENU_OWNERS[number]
 
 /**

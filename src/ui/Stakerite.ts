@@ -7,7 +7,7 @@ import { t, getLang, toTraditional } from '@/i18n/Lang'
 import { upgradeStep, maxLevelOf, TIMBITE, DROSS, salvageValue } from '@/rpg/Upgrade'
 import { sellPrice, stackSellPrice, shopData, CURRENCY } from '@/rpg/Shop'
 import { movementName, unlockItemName, SCORE } from '@/rpg/Movements'
-import { keyOf, codeLabel, BINDABLE_ACTIONS, GAMEPLAY_EXIT_ACTIONS, UI_INTENTS, UI_EXIT_INTENTS, type ActionName, type AnswerSource, type Binds, type UiBinds, type UiIntent } from '@/core/Input'
+import { keyOf, codeLabelIn, BINDABLE_ACTIONS, GAMEPLAY_EXIT_ACTIONS, UI_INTENTS, UI_EXIT_INTENTS, type ActionName, type AnswerSource, type Binds, type UiBinds, type UiIntent } from '@/core/Input'
 import { GAMEPLAY_BOUNDS, type GameplaySettings } from '@/settings/GameplaySettings'
 import { BIND_BOUNDS, type BindChannel } from '@/settings/Bindings'
 import { DEFAULT_QUALITY, QUALITY_NAMES, type QualityTier } from '@/settings/Quality'
@@ -1044,8 +1044,9 @@ export class Stakerite {
   // 全仓库没有任何地方叫它——面板的开合只在组合根 `setOverlay` 那一处走 `show()`/`close()`
   // （2026-11-10 KI-437 用 `git grep '\.toggle(' HEAD -- src` 量过：src 里那一处是 `lock.toggle()`，属主是 LockOn）。
 
-  show(): void {
+  show(tab?: 'ops'): void {
     this.open = true
+    if (tab === 'ops') this.setTab(tab)
     this.navUsed = false   // 每次打开都从"没有焦点框"开始（焦点行号仍按页记着，§218 的焦点记忆是跨页不是跨开场）
     this.root.classList.add('on')
     if (this.tab === 'save') this.refreshSaves()
@@ -1083,7 +1084,8 @@ export class Stakerite {
 
   /** 页签名册现推（§55）：接得到把手才有「操作」；「手册」「游记」永远在，因为它们不抓把手 */
   private tabsOf(): { id: Tab; label: string; hint: string }[] {
-    return this.ops ? [...TABS, MANUAL_TAB, ATLAS_TAB, CHRONICLE_TAB, OPS_TAB] : [...TABS, MANUAL_TAB, ATLAS_TAB, CHRONICLE_TAB]
+    const tabs = this.ops ? [...TABS, MANUAL_TAB, ATLAS_TAB, CHRONICLE_TAB, OPS_TAB] : [...TABS, MANUAL_TAB, ATLAS_TAB, CHRONICLE_TAB]
+    return tabs.map((tab) => ({ ...tab, label: t(`stak.tab.${tab.id}`), hint: t(`stak.tab.${tab.id}.hint`) }))
   }
 
   /** 换页：进存档页就现取名册（离开时把未确认的那一笔撤掉，别把确认条留在别的页里） */
@@ -1806,7 +1808,7 @@ export class Stakerite {
 
   /** 槽位显示绑定本身，而不是面板里再抄一份 'R'/'C'——改键之后面板不会说谎 */
   private keyFor(action: ActionName): string {
-    return keyOf(action, this.bindsSource?.binds) ?? '—'
+    return keyOf(action, this.bindsSource?.binds, getLang() === 'en' ? 'en' : 'zh') ?? '—'
   }
 
   private renderMoves(): string {
@@ -2251,7 +2253,7 @@ export class Stakerite {
     /** 两节的行名今天会重名（菜单的「后退」与玩法的「后退」），所以"谁在等"要先问节、再问行 */
     const gameSwap = this.swapNote?.channel === 'gameplay' ? this.swapNote : null
     const keys = BINDABLE_ACTIONS.map((a) => {
-      const shown = binds ? keyOf(a, binds) : null
+      const shown = binds ? keyOf(a, binds, getLang() === 'en' ? 'en' : 'zh') : null
       /** 玩家点名「无」的那几格（名单只有一个书写者：`clampBindings`，见 `Binds.unbound`） */
       const off = binds !== undefined && binds.unbound.includes(a)
       /** 手柄那一列上的「无」（KI-346）：问的是**另一份名单**，与上面那一格各管各的表 */
@@ -2344,7 +2346,7 @@ export class Stakerite {
       /** 记号挂在**被写进的那一列**上（`onto` 由边界给）：两列各有各的格子集合，混挂就是让另一列替这一列作证 */
       const movedMark = justSwapped?.displaced && justSwapped.moved ? ` <span class="over">${t('stak.mark.movedGroup')}</span>` : ''
       return `<div class="row"><span class="name">${intentLabel(i)}<span class="note">${note}</span></span>
-        <span class="num">${codes.map(codeLabel).join(t('stak.sep')) || t('stak.value.none')}${justSwapped?.onto === 'keyboard' ? movedMark : ''}</span>
+        <span class="num">${codes.map((code) => codeLabelIn(code, getLang() === 'en' ? 'en' : 'zh')).join(t('stak.sep')) || t('stak.value.none')}${justSwapped?.onto === 'keyboard' ? movedMark : ''}</span>
         <span class="num">${padShown || (padOff ? t('stak.value.none') : '—')}${justSwapped?.onto === 'pad' ? movedMark : ''}</span>
         <span class="act">${acts}</span></div>`
     }).join('')

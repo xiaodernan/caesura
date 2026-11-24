@@ -12,7 +12,6 @@ export const AUTHOR_ENV_KEYS: readonly ['CAESURA_LLM_API_KEY', 'CAESURA_LLM_BASE
 export const LLM_DEFAULT_BASE_URL: string
 export const LLM_DEFAULT_MODEL: string
 export const LLM_DEFAULT_MODEL_CHAIN: readonly string[]
-export const LLM_DEFAULT_PROXY: string
 export const LLM_DEFAULT_MISSING_KEY: string
 
 export function resolveModelChain(env?: NodeJS.ProcessEnv | Record<string, string | undefined>): string[]

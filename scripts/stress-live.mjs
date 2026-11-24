@@ -7,7 +7,7 @@
  * 用法：
  *   node scripts/stress-live.mjs                       # 默认打 https://xiaodernan.github.io/caesura/ 32 路 × 3 轮
  *   node scripts/stress-live.mjs --target=/caesura/changelog.html --concurrency=64 --rounds=2
- *   node scripts/stress-live.mjs --target=<url> --proxy=http://127.0.0.1:7897
+ *   node scripts/stress-live.mjs --target=<url> --proxy=<your-proxy-url>  # 可选；默认直连
  *
  * 退出码：0 = 全部 200 且非空；1 = 有失败（失败率>0 即非零）；2 = 参数/网络错误。
  * 纪律：只读 · 不出模块 · 不碰本机系统（纯 fetch）；gen 里任何人类可读数都可被归因复核。

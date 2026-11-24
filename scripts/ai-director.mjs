@@ -29,7 +29,7 @@
  *
  * 用法：
  *   node scripts/ai-director.mjs              # offline（CI 安全，不触网）
- *   node scripts/ai-director.mjs --live       # 真跑（走 CAESURA_LLM_PROXY 或 127.0.0.1:7897）
+ *   node scripts/ai-director.mjs --live       # 真跑（默认直连；需要代理才显式设 CAESURA_LLM_PROXY）
  *   node scripts/ai-director.mjs --focus "…"  # 换 canon 检索焦点
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, copyFileSync } from 'node:fs'
@@ -274,6 +274,16 @@ async function callDirector(env, { stdinPrefix, task, temperature, maxTokens, re
       out.status = out?.status ?? 0
       out.modelUsed = modelName
       last = out
+      // KI-745（API 关闭后的降级）：**配置类失败不重试、不顺移**。
+      // 「没配 key」不是**瞬时**故障 —— 重试同一个模型 3 次、再顺移到下一个模型，
+      // 换来的只是 4×3 = 12 次退避等待（实测 `--live` 白等 55 秒）。
+      // ⇒ 识别出 missing_key 就**立刻放弃整条链**，如实登记，让上层立刻拿到结论。
+      const isConfigFailure = /missing CAESURA_LLM_API_KEY|missing_key/i.test(String(out?.error ?? ''))
+      if (isConfigFailure) {
+        console.warn(`[ai-director] model=${modelName} 缺 CAESURA_LLM_API_KEY（配置类失败）— 不重试、不顺移，立即放弃整条链`)
+        out.configFailure = true
+        return out
+      }
       console.warn(`[ai-director] model=${modelName} attempt ${attempt}/${MAX_ATTEMPTS} failed status=${out?.status ?? 'throw'}${out?.error ? ` err=${String(out.error).slice(0, 80)}` : ''} — ${attempt < MAX_ATTEMPTS ? 'retrying' : 'giving up on this model'}`)
       if (attempt < MAX_ATTEMPTS) await new Promise((r) => setTimeout(r, 1500 * attempt))
     }
@@ -332,7 +342,7 @@ const directorPrefix = (state) =>
   (state.canon ?? []).map((c, i) => `${i + 1}. ${c.preview}`).join('\n')
 
 async function nodeAudit(state) {
-  if (state.mode !== 'live') { state.audit = null; return }
+  if (state.mode !== 'live' || state.aborted) { state.audit = null; return }
   const prefix = state.prefix || directorPrefix(state)
   const task = '【任务·一致性审计】基于上面的 canon 证据，给出：{"consistency":0-100整数,"verdictZh":"≤60字总评","verdictEn":"≤30 words","risks":[{"severity":"high|med|low","itemZh":"风险点","itemEn":"risk","detailZh":"≤50字","detailEn":"≤30 words"}],"gapsZh":["≤30字缺口"],"gapsEn":["≤15 words"]}。risks 至少 2 条、至多 4 条；gaps 至少 2 条。只许 JSON。'
   const out = await callDirector(state.env, { stdinPrefix: prefix, task: withSnapshot(state, task), temperature: 0.4, maxTokens: 900 })
@@ -343,7 +353,7 @@ async function nodeAudit(state) {
 }
 
 async function nodeProposeTransitions(state) {
-  if (state.mode !== 'live') { state.transitions = []; return }
+  if (state.mode !== 'live' || state.aborted) { state.transitions = []; return }
   // KI-725 · 把既有 canon flag 名册 + 历史 conflict 回灌进提案节点：
   // 让 LLM 在起草时就知道"这些旗标已经存在 / 这些被判过重复"，从源头减少 conflict。
   const roster = canonFlagRoster()
@@ -367,7 +377,7 @@ async function nodeProposeTransitions(state) {
 }
 
 async function nodeDraftContent(state) {
-  if (state.mode !== 'live') { state.atlasDraft = null; return }
+  if (state.mode !== 'live' || state.aborted) { state.atlasDraft = null; return }
   // KI-726 · 把上一轮编辑闸门的终审反馈注入起草任务：LLM 起草时即知"上次被终审指出的问题"，避免重犯。
   const feedback = editorialFeedback()
   state.editorialFeedback = feedback
@@ -396,7 +406,7 @@ async function nodeDraftContent(state) {
  * canon 事实（人物/物件/地名：回廊钟·阿汐·薄簿·钟摆渡人·盐·干痕·余响集）逐字校验模型输出，绝不静默信任。
  */
 async function nodeEditorialGate(state) {
-  if (state.mode !== 'live') { state.editorialGate = null; return }
+  if (state.mode !== 'live' || state.aborted) { state.editorialGate = null; return }
   if (!state.atlasDraft) { state.editorialGate = { skipped: true, reason: 'no draft (draftContent failed? see errors)' }; return }
   const d = state.atlasDraft
   const task = `【任务·canon 编辑闸门】你是《止音纪元》终审编辑。基于上面的 canon 证据对这份游记草稿做终审：{"canonFidelity":0-100整数,"voiceFidelity":0-100整数,"verdict":"pass|revise|reject","issues":["≤20字问题"],"revisedPZh":"verdict=pass 时为 null；否则给出修订后的≤140字正文","revisedPEn":"verdict=pass 时为 null；否则给出修订后的≤80 words 正文"}。硬约束：①不得引入新人物/新物件；②canon 名词原样保留（回廊钟/阿汐/薄簿/钟摆渡人/盐/干痕/余响集/止音纪元）；③verdict 只许 pass|revise|reject；④只许 JSON。草稿：${JSON.stringify({ titleZh: d.titleZh, titleEn: d.titleEn, pZh: d.pZh, pEn: d.pEn, codaZh: d.codaZh, codaEn: d.codaEn })}`
@@ -519,17 +529,45 @@ function writeArtifacts(state) {
   ].join('\n')
   writeFileSync(resolve(dirDocs, `RUN-${TODAY}.md`), md, 'utf8')
   // ② 机读名册（authoring）＋ ③ admin 公开镜像（同一份字节）
+  //
+  // KI-745（降级体检抓到的第二个真缺陷）：**offline 干跑会覆盖真实的 live 产物**。
+  // 干跑的产物里 audit=null / transitions=[] / atlasDraft=null —— 全是空的。
+  // 它一旦写进 ai-director-latest.json，admin 页上那份"上一次真跑的结果"就**消失了**，
+  // 而且从 git 历史里也看不出是被干跑抹掉的（文件确实变小了）。
+  // ⇒ 守卫：**只有 live 真跑**（且至少有一次调用成功）才许覆盖"最新产物"。
+  //    干跑只写**带日期的 RUN 报告**（docs/ai-director/RUN-<date>.md），不碰 latest 镜像。
+  const perCallProbe = Array.isArray(state.usage.perCall) ? state.usage.perCall : []
+  const anyCallOk = perCallProbe.some((c) => Number(c?.status ?? 0) >= 200 && Number(c?.status ?? 0) < 300)
+  const mayOverwriteLatest = state.mode === 'live' && anyCallOk
   const target1 = resolve(ROOT, 'src/data/authoring/ai-director-latest.json')
   const target2 = resolve(ROOT, 'admin/ai-director-latest.json')
   const body = JSON.stringify(art, null, 2) + '\n'
-  writeFileSync(target1, body, 'utf8')
-  writeFileSync(target2, body, 'utf8')
+  if (mayOverwriteLatest) {
+    writeFileSync(target1, body, 'utf8')
+    writeFileSync(target2, body, 'utf8')
+  } else {
+    const why = state.mode !== 'live' ? 'offline 干跑' : 'live 但没有任何一次调用成功（API 未通）'
+    console.log(`[ai-director] 不覆盖 latest 产物（${why}）—— 只写 RUN-${TODAY}.md 报告`)
+  }
 
   // ⑦ LLM 缓存命中账本（rolling ≤80 次运行 · 独立文件 · 不改变最新产物对外形状）：
   //    让「持续 ≈90% 命中、无突然掉缓存」从一次实测变成可长期审计的持久证据（admin 页读它渲染）。
   //    KI-742：只有 live 真跑才有"缓存命中"概念；offline dry-run（llm_calls=0）绝不写账本——
   //    API 关闭后项目长期跑 offline，若照写会不断污染账本（steadyHit=null 的无效行）。
-  if (state.mode === 'live') {
+  //    KI-745（API 关闭后的降级体检抓到的真缺陷）：**只判 mode==='live' 还不够**。
+  //    `--live` 而 API 关着时，管线照样跑完（每个节点都失败），`state.usage.calls` 也有数，
+  //    但 perCall 里每一格 status=0 / cached=0 / prompt=0
+  //    ⇒ 账本被写进一行**全是 0 的"命中记录"**，把「≈90% 命中」这条曲线往下拽，
+  //      而且 admin 页会把它当成一次真实测量展示出来。
+  //    ⇒ 追加判据：**至少有一次调用真的通了**（status ∈ 2xx）才许写账本。
+  //      一次都没通 ⇒ 这一行不是"命中记录"，是"失败记录"，不进账本。
+  const perCallRaw = Array.isArray(state.usage.perCall) ? state.usage.perCall : []
+  const succeededCalls = perCallRaw.filter((c) => Number(c?.status ?? 0) >= 200 && Number(c?.status ?? 0) < 300)
+  const ledgerWritable = state.mode === 'live' && succeededCalls.length > 0
+  if (state.mode === 'live' && !ledgerWritable) {
+    console.log('[ai-director] cache-metrics ledger: 不写账本（live 但没有任何一次调用成功 —— API 未通；这一行不是命中记录）')
+  }
+  if (ledgerWritable) {
   try {
     const metricsPath = resolve(ROOT, 'admin/ai-cache-metrics.json')
     const authoringMetricsPath = resolve(ROOT, 'src/data/authoring/ai-cache-metrics.json')
@@ -538,7 +576,7 @@ function writeArtifacts(state) {
       const prior = JSON.parse(readFileSync(metricsPath, 'utf8'))
       if (prior && Array.isArray(prior.entries)) ledger = prior.entries
     } catch { ledger = [] }
-    const perCall = Array.isArray(state.usage.perCall) ? state.usage.perCall : []
+    const perCall = perCallRaw
     const hitRates = Array.isArray(state.usage.hitRates) ? state.usage.hitRates : []
     const meanHit = hitRates.length ? Math.round((hitRates.reduce((a, b) => a + b, 0) / hitRates.length) * 100) / 100 : null
     // 稳态命中（剔除 warmup 首冷写）：单独记一列——这才是用户看的「≈90%」
@@ -572,7 +610,7 @@ function writeArtifacts(state) {
     // 账本写失败不致命：最新产物已经落盘；如实登记到 errors 但不阻断管线
     state.errors.push({ node: 'cacheMetrics', message: String((e && e.message) || e) })
   }
-  } // KI-742 · mode==='live' 守卫结束
+  } // KI-742 + KI-745 · 「live 且至少一次调用成功」守卫结束
 }
 
 /* ═══════════ 组图 ═══════════ */
@@ -588,7 +626,14 @@ async function main() {
     .addNode('warmup', async (s) => {
       if (s.mode !== 'live') return
       s.env = authorLlmEnv()
-      if (!s.env.apiKey) throw new Error('missing CAESURA_LLM_API_KEY（env 注入）')
+      if (!s.env.apiKey) {
+        // KI-745（API 关闭后的降级）：缺 key 是**全局**配置问题 ⇒ 后续每个 LLM 节点都必然失败。
+        // 熔断标志让它们**立刻跳过**（不重试、不顺移、不等退避），
+        // 否则一次 `--live` 要白等 4 模型 × 3 次重试 × 1.5s+ 退避 ≈ 55 秒。
+        s.aborted = true
+        s.abortReason = 'missing CAESURA_LLM_API_KEY（env 注入）—— 作者侧 API 未配置，全部 LLM 节点已跳过'
+        throw new Error(s.abortReason)
+      }
       // 代理口径全走 caesura-llm-client（applyAuthorProxyFromEnv / curlSub2ApiFallback 自己会读 env）——
       // 这里不再直接触碰环境变量名册（KI-441 唯一入口纪律）
       await applyAuthorProxyFromEnv()

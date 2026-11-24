@@ -11,9 +11,9 @@
 
 <!-- PHASE-STATUS:BEGIN-KV -->
 ```
-KI.rows=661
-KI.Implemented=484
-KI.Partial=167
+KI.rows=665
+KI.Implemented=486
+KI.Partial=169
 KI.Placeholder=0
 KI.Blocked=10
 SYS.rows=105
@@ -31,8 +31,8 @@ PF.Implemented=0
 PF.Partial=0
 PF.Placeholder=0
 PF.Blocked=1
-ARCH.sections=202
-ARCH.maxSection=202
+ARCH.sections=205
+ARCH.maxSection=205
 ARCH.duplicates=0
 ARCH.holes=none
 PKG.scripts=98

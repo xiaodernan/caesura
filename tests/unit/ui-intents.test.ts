@@ -411,6 +411,21 @@ describe('KI-062 入口只有一个（源码门）', () => {
     expect(live, '环之前那一段要有泵：pumpMenu(input, feedMenu) 是标题屏唯一的读数来源').toContain('pumpMenu(input, feedMenu)')
   })
 
+  it('标题与暂停的设置入口共用操作页，关闭时按来源返回且不抹玩家暂停格', () => {
+    const live = main.split(/[\r\n]+/).filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*')).join('\n')
+    const open = live.slice(live.indexOf('function openSettings'), live.indexOf('/** 地图'))
+    const close = live.slice(live.indexOf('function setPanelOpen'), live.indexOf('function openSettings'))
+    expect(open).toContain("setOverlay('panel', 'ops')")
+    expect(open).toContain('settingsReturn = from')
+    expect(open).not.toContain('dispose()')
+    expect(open).not.toContain('menuPump')
+    expect(close).toContain("setOverlay(back === 'pause' ? null : back)")
+    expect(close).not.toContain('toggleByUser')
+    expect(live).toContain("onSettings: () => openSettings('title')")
+    expect(live).toContain("onSettings: () => openSettings('pause')")
+    expect(live).toContain('pauseOverlay.setSuppressed(overlay !== null)')
+  })
+
   it('pick 名册的键盘侧一条不缺：1-9 两种拼写都落到同一格', () => {
     const 主键盘数字格 = Object.keys(UI_BINDS.keyboard).filter((k) => /^Digit\d$/.test(k)).length
     expect(PICK_INTENTS.length, '直选名册有几格，默认表里 Digit 那一族就该有几格；这里对不上就是有一侧多写或少写').toBe(主键盘数字格)

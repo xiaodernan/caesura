@@ -154,6 +154,16 @@
     observe: observe,
   };
 
+  document.addEventListener('caesura-language-change', function (event) {
+    if (event.detail === 'zh-TW') {
+      applyToDocument();
+      observe(document.body);
+    } else {
+      if (activeObs) activeObs.disconnect();
+      restoreOriginals();
+    }
+  });
+
   ready(function () {
     loadTable(function (t) {
       setTable(t);

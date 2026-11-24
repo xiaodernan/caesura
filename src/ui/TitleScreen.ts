@@ -5,7 +5,7 @@ import { allGearItems } from '@/rpg/Loot'
 import type { SlotCard } from '@/save/Slots'
 import { SAVE_CARD_CSS, saveCardHtml, saveCards, type SaveCardView } from './SaveSlots'
 import type { OriginData, ProgressionData } from '@/data/schema'
-import { getLang, setLang, nextLang, t } from '@/i18n/Lang'
+import { cycleLang, getLang, t, toTraditional, type Lang } from '@/i18n/Lang'
 
 /**
  * 开场「定弦」（KI-031② / §2.2）。出身是叙事动作而不是设置项：这一屏在 `loop.start()`
@@ -30,19 +30,29 @@ export interface TitleCard {
 /** 出身卡面：顺序就是 progression.json origins[] 的顺序（表序即 UI 序，§55） */
 export function titleCards(): TitleCard[] {
   const d = registry.get<ProgressionData>('progression')
-  const attrLabel = (key: string): string =>
-    d.attrs.find((a) => a.key === key)?.displayName ?? key
+  const lang = getLang()
+  const text = (key: string | undefined, fallback: string): string => {
+    if (lang === 'en' && key) {
+      const value = t(key)
+      return value === key ? fallback : value
+    }
+    return lang === 'zh-TW' ? toTraditional(fallback) : fallback
+  }
+  const attrLabel = (key: string): string => {
+    const attr = d.attrs.find((a) => a.key === key)
+    return text(attr?.nameKey, attr?.displayName ?? key)
+  }
   return d.origins.map((o: OriginData) => {
     // 武器的中文名住在**装备件**上（weapons.json 没有 displayName——件才是玩家"持有"的东西），
     // 查找与 RpgRuntime 出身造装走的是同一条判据：gear.weaponId === 出身武器。
     const gearItem = allGearItems().find((it) => it.gear?.weaponId === o.weaponId)
     return {
       id: o.id,
-      name: o.displayName,
-      blurb: o.blurb ?? '',
-      weaponName: gearItem?.displayName ?? o.weaponId,
+      name: text(o.nameKey, o.displayName),
+      blurb: o.blurb == null ? '' : text(`${o.nameKey}.blurb`, o.blurb),
+      weaponName: gearItem ? text(gearItem.nameKey, gearItem.displayName) : o.weaponId,
       attrs: ATTR_KEYS.map((k) => ({ label: attrLabel(k), value: o.attrs[k] })),
-      passive: o.passive?.label ?? null
+      passive: o.passive ? text(`${o.nameKey}.passive`, o.passive.label) : null
     }
   })
 }
@@ -188,16 +198,18 @@ export interface TitleHooks {
   onContinue: (slot: string) => void
   /** 存档名册（`save/Slots.ts`）：卡面从它现读，标题屏自己不碰存储键位 */
   listSlots: () => Promise<SlotCard[]>
+  onSettings?: () => void
 }
 
 type Mode = 'string' | 'slots' | 'confirm'
 
-type Focus = { kind: 'card' | 'continue' | 'slot' | 'new'; index: number }
+type Focus = { kind: 'card' | 'continue' | 'settings' | 'slot' | 'new'; index: number }
 
 export class TitleScreen {
   private readonly root: HTMLDivElement
   private focus: Focus = { kind: 'card', index: 0 }
-  private readonly cards: TitleCard[]
+  private cards: TitleCard[] = []
+  private cardsLang: Lang | null = null
   private mode: Mode = 'string'
   private slotViews: SaveCardView[] = []
   private slotsLoaded = false
@@ -212,7 +224,7 @@ export class TitleScreen {
   private quickstartShown = false
 
   constructor(private readonly hooks: TitleHooks, preselectId?: string) {
-    this.cards = titleCards()
+    this.refreshCards()
     const pre = this.cards.findIndex((c) => c.id === preselectId)
     if (pre >= 0) this.focus = { kind: 'card', index: pre }
     const style = document.createElement('style')
@@ -266,6 +278,8 @@ export class TitleScreen {
 
   show(): void { this.root.classList.add('on') }
 
+  hide(): void { this.root.classList.remove('on') }
+
   /**
    * 决策完成后整体退场：先灭 `on` 再摘 DOM——`uiStep` 的第一句就是 `isOpen`，所以这一步之后
    * 就算还有人把意图喂过来（`leaveTitle()` 与钩子之间的空档），这一屏也一格都不动。
@@ -314,11 +328,19 @@ export class TitleScreen {
     const n = this.cards.length
     switch (this.mode) {
       case 'string':
-        if (intents.has('left')) this.focus = { kind: 'card', index: (this.focus.index + n - 1) % n }
-        else if (intents.has('right')) this.focus = { kind: 'card', index: (this.focus.index + 1) % n }
-        else if (intents.has('up') || intents.has('down')) {
-          if (!this.canBrowseSlots) return
-          this.focus = { kind: 'continue', index: 0 }
+        if (this.focus.kind === 'settings') {
+          if (intents.has('confirm')) { this.hooks.onSettings?.(); return }
+          if (intents.has('left') || intents.has('right') || intents.has('up') || intents.has('down')) {
+            this.focus = this.canBrowseSlots ? { kind: 'continue', index: 0 } : { kind: 'card', index: 0 }
+          } else return
+        } else if (intents.has('left')) {
+          if (this.focus.kind === 'card') this.focus = { kind: 'card', index: (this.focus.index + n - 1) % n }
+          else this.focus = { kind: 'settings', index: 0 }
+        } else if (intents.has('right')) {
+          if (this.focus.kind === 'card') this.focus = { kind: 'card', index: (this.focus.index + 1) % n }
+          else this.focus = { kind: 'settings', index: 0 }
+        } else if (intents.has('up') || intents.has('down')) {
+          this.focus = this.canBrowseSlots ? { kind: 'continue', index: 0 } : { kind: 'settings', index: 0 }
         } else if (intents.has('confirm')) {
           if (this.focus.kind === 'card') this.chooseNew(this.cards[this.focus.index].id)
           else if (this.canBrowseSlots) { this.mode = 'slots'; this.focus = { kind: 'slot', index: 0 } }
@@ -383,7 +405,7 @@ export class TitleScreen {
   private click(e: MouseEvent): void {
     const target = e.target as HTMLElement
     if (target.dataset && target.dataset.langToggle !== undefined) {
-      setLang(nextLang(getLang()))
+      cycleLang()
       this.render()
       return
     }
@@ -403,7 +425,8 @@ export class TitleScreen {
       this.navigate(act === 'goto-anthology' ? '/caesura/story/anthology/' : act === 'goto-guide' ? '/caesura/tutorial/' : '/caesura/codex/')
       return
     }
-    if (act === 'card') this.chooseNew(el.dataset.arg!)
+    if (act === 'settings') this.hooks.onSettings?.()
+    else if (act === 'card') this.chooseNew(el.dataset.arg!)
     else if (act === 'continue') { this.mode = 'slots'; this.focus = { kind: 'slot', index: 0 } }
     else if (act === 'load') this.hooks.onContinue(el.dataset.arg!)
     else if (act === 'back') { this.mode = 'string'; this.focus = { kind: 'card', index: 0 } }
@@ -444,7 +467,7 @@ export class TitleScreen {
       <h1>${t('ui.title.h1')}</h1>${this.renderLangChip()}
       <div class="sub">${t('ui.title.sub')}</div>
       <div class="cards">${cards}</div>
-      <div class="acts">${cont}</div>
+      <div class="acts">${cont}<div class="act${this.focus.kind === 'settings' ? ' sel' : ''}" data-act="settings" data-tip="${t('ui.title.settings')}">${t('ui.title.settings')}</div></div>
       <div class="hint">${hint}</div>
       <div class="hint subtle">${t('ui.title.hint.manual')}</div>
       <nav class="qs-links" aria-label="${t('ui.title.links.aria')}">
@@ -510,7 +533,13 @@ export class TitleScreen {
     return `<button class="lang-chip" data-lang-toggle type="button" aria-label="${aria}" title="${aria}" data-tip="${t('ui.title.tip.lang')}">${label}</button>`
   }
 
+  private refreshCards(): void {
+    this.cards = titleCards()
+    this.cardsLang = getLang()
+  }
+
   private render(): void {
+    if (this.cardsLang !== getLang()) this.refreshCards()
     this.root.innerHTML =
       this.mode === 'slots' ? this.renderSlots()
         : this.mode === 'confirm' ? this.renderConfirm()

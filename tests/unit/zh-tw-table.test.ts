@@ -40,6 +40,22 @@ describe('zh-tw compact table', () => {
     expect(map[sc]).toBe(tc)
   })
 
+  it('运行时语言事件接通转换与原文恢复', () => {
+    const converter = readFileSync(resolve(ROOT, 'public/zh-tw-converter.js'), 'utf8')
+    expect(converter).toContain("document.addEventListener('caesura-language-change'")
+    expect(converter).toContain("if (event.detail === 'zh-TW')")
+    expect(converter).toContain('applyToDocument();')
+    expect(converter).toContain('observe(document.body);')
+    expect(converter).toContain('restoreOriginals();')
+  })
+
+  it('游戏入口按当前页解析转换器，本地根路径与 Pages 子路径都能加载', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    expect(html).toContain('<script defer src="./zh-tw-converter.js"></script>')
+    expect(html).not.toContain('src="/caesura/zh-tw-converter.js"')
+    expect(html).not.toContain('src="./caesura/zh-tw-converter.js"')
+  })
+
   it('繁体 key（U+9418）不应被误写为简体单字', () => {
     const map = table.map as Record<string, string>
     expect(map['\u9418'] as string | undefined, '钟 U+9418 是繁体，不应有这个 key').toBeUndefined()

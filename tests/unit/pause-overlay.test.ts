@@ -29,8 +29,10 @@ class FakeEl {
   className = ''
   innerHTML = ''
   textContent = ''
+  dataset: Record<string, string> = {}
   children: FakeEl[] = []
   parent: FakeEl | null = null
+  handlers: Record<string, ((e: unknown) => void)[]> = {}
   private classes = new Set<string>()
   classList = {
     add: (c: string) => { this.classes.add(c) },
@@ -42,6 +44,9 @@ class FakeEl {
     },
   }
   setAttribute(_name: string, _value: string) {}
+  addEventListener(type: string, fn: (e: unknown) => void): void { (this.handlers[type] ??= []).push(fn) }
+  dispatch(type: string, e: unknown): void { for (const fn of this.handlers[type] ?? []) fn(e) }
+  closest(): FakeEl | null { return this.dataset.act ? this : null }
   appendChild(c: FakeEl): FakeEl { c.parent = this; this.children.push(c); return c }
   remove(): void {
     if (!this.parent) return
@@ -165,6 +170,9 @@ describe('PauseOverlay：阶段 F-45 玩家手动暂停的「止音仪典」', (
     expect(css, '朱印（回声副本）已注入').toContain('.pause-overlay .seal.seal-b')
     expect(css, 'hint shimmer 金色洗白 keyframes 已注入').toContain('@keyframes pause-hint-shimmer')
     expect(css, 'reduced-motion 下 hint shimmer 已停').toContain('.pause-overlay .hint { animation: none;')
+    expect(css, '暂停遮罩不整层吞掉点击').toContain('.pause-overlay.on { display: flex; pointer-events: none; }')
+    expect(css).toContain('cursor: pointer; pointer-events: auto;')
+    expect(css).toContain('.pause-overlay .settings:focus-visible')
     // DOM：两枚印已挂（伪 DOM 的 innerHTML 仅是字符串字段、没有 querySelectorAll——直接验字节）
     const root = body.children.find((el) => el.id === 'pause-overlay')!
     const html = (root as unknown as { innerHTML: string }).innerHTML
@@ -181,6 +189,53 @@ describe('PauseOverlay：阶段 F-45 玩家手动暂停的「止音仪典」', (
     expect(body.children.find((el) => el.id === 'pause-overlay'), 'dispose 前节点在 body').toBeDefined()
     overlay.dispose()
     expect(body.children.find((el) => el.id === 'pause-overlay'), 'dispose 后节点摘除').toBeUndefined()
+  })
+
+  it('设置入口支持点击与 Enter，且只收起遮罩、不清玩家暂停格', () => {
+    const time = new GameTime()
+    const pause = new PauseControl(time)
+    let opened = 0
+    const overlay = new PauseOverlay({ pause, onSettings: () => { opened++ } })
+    pause.toggleByUser()
+    overlay.update()
+    const root = body.children.find((el) => el.id === 'pause-overlay')!
+    const button = new FakeEl()
+    button.dataset.act = 'settings'
+    root.dispatch('click', { target: button })
+    overlay.uiStep(new Set(['confirm']))
+    expect(opened).toBe(2)
+    overlay.setSuppressed(true)
+    expect(overlay.isOpen).toBe(false)
+    expect(root.classList.contains('on')).toBe(false)
+    expect(pause.pausedByUser).toBe(true)
+    expect(time.paused).toBe(true)
+    overlay.setSuppressed(false)
+    expect(overlay.isOpen).toBe(true)
+    expect(root.classList.contains('on')).toBe(true)
+    overlay.uiStep(new Set(['back']))
+    expect(opened).toBe(2)
+  })
+
+  it('设置按钮与提示都随当前语言绘制，不混入另一语言的 PAUSED／已暂停', () => {
+    setLang('en')
+    const overlay = new PauseOverlay({ pause: new PauseControl(new GameTime()) })
+    const root = body.children.find((el) => el.id === 'pause-overlay')!
+    expect(root.innerHTML).toContain('Settings · Controls')
+    expect(root.innerHTML).toContain('PAUSED')
+    expect(root.innerHTML).not.toContain('已暂停')
+    overlay.dispose()
+  })
+
+  it('已存在的暂停遮罩在语言切换后的下一次 update 重绘', () => {
+    const overlay = new PauseOverlay({ pause: new PauseControl(new GameTime()) })
+    const root = body.children.find((el) => el.id === 'pause-overlay')!
+    expect(root.innerHTML).toContain('已暂停')
+    setLang('en')
+    overlay.update()
+    expect(root.innerHTML).toContain('PAUSED')
+    expect(root.innerHTML).toContain('Settings · Controls')
+    expect(root.innerHTML).not.toContain('已暂停')
+    overlay.dispose()
   })
 
   it('isOpen getter 跟随 userPaused', () => {

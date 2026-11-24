@@ -82,12 +82,12 @@ export interface WarmupResult {
 
 export interface AuthorProxyResult {
   ok: boolean
-  via: 'direct' | 'clash-proxy'
+  via: 'direct' | 'proxy'
   proxy?: string
   note?: string
   error?: string
 }
-/** 作者侧出网口径（KI-617）：响应 CAESURA_LLM_PROXY / HTTPS_PROXY 时懒装 undici ProxyAgent 到 setGlobalDispatcher；缺省直连 · mock 绝不碰代理。 */
+/** 作者侧出网口径（KI-746 · 与 Clash 解绑）：只读项目专用 CAESURA_LLM_PROXY 时懒装 undici ProxyAgent；缺省直连 · 不读系统通用代理 · mock 绝不碰代理。 */
 export function applyAuthorProxyFromEnv(env?: NodeJS.ProcessEnv): Promise<AuthorProxyResult>
 
 export interface CurlSub2ApiFallbackResult {
@@ -96,6 +96,16 @@ export interface CurlSub2ApiFallbackResult {
   raw: string
   error: string | null
 }
+/**
+ * 代理端口**可达性预检**（KI-745 · API 关闭后的降级）。
+ *
+ * curl 兜底用 `--max-time 180` ⇒ 代理端口没人监听时，每次调用都要等满 3 分钟才失败。
+ * 本函数在调 curl 之前先探一下端口：**连不上就立刻返回 false**，绝不进长等。
+ *
+ * ⚠️ 只判「端口有没有人在听」，**不判**代理能不能真的出网（那要真发一次请求才知道）。
+ */
+export function proxyReachable(proxy: string): Promise<boolean>
+
 /** curl.exe 兜底（KI-617）：Node ECONNRESET 时走系统 curl 同一代理（状态码/body 按末行分离）；调用方组装同构响应。 */
 export function curlSub2ApiFallback(
   url: string,

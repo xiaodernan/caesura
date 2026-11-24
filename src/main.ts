@@ -1,4 +1,4 @@
-import { t, getLang, nextLang, setLang } from '@/i18n/Lang'
+import { t, cycleLang, getLang } from '@/i18n/Lang'
 import { shouldCycleLang, LANG_NAME_KEY } from '@/i18n/LangKey'
 import { bus } from '@/core/EventBus'
 import { Vector3 } from 'three'
@@ -242,7 +242,7 @@ const decals = (await import('@/vfx/Decals')).initDecalSystem(arena.scene)
 const grade = new ColorGrade(arena.scene, canvas)
 const hud = new Hud(document.getElementById('hud') as HTMLCanvasElement, input)
 /** 玩家手动暂停的「止音仪典」全屏提示（仅在玩家边界触发，覆盖在场景/HUD 之上不接收输入/点击）。 */
-const pauseOverlay = new PauseOverlay({ pause })
+const pauseOverlay = new PauseOverlay({ pause, onSettings: () => openSettings('pause') })
 /** Boss 换段誓约（Phase F-47）：boss.phase 事件触发时，全屏中央闪显Boss 名 + 「第 N 阶」副标，1.4s 后淡出（pure DOM，不接输入）。 */
 new BossPhaseBanner() // side-effect only: bus.on 注册 + DOM 挂载，引用交给总线，主舞台上不读它
 /** Boss 终局「烬印」（Phase F-49）：boss.defeated 触发时，全屏铺开终印静默告别——金渐变 Boss 名 + 「终」朱砂印，2.8s 奏毕即淡出。 */
@@ -388,7 +388,7 @@ const descendPanel = new DescendPanel({
  * 算成 overlay 就会被下面那句 `holdByOverlay` 冻住世界，而**过场自己的时间正走在被冻住的那一段里**）。
  * 派生而不是重写一遍字面量：词表只有 `MenuOwner` 一份，这里再抄一次就是第二份账。
  */
-type Overlay = Exclude<MenuOwner, 'cinematic'> | null
+type Overlay = Exclude<MenuOwner, 'cinematic' | 'pause'> | null
 /**
  * **overlay 的唯一所有者**（KI-097 收拢 KI-061/KI-062 那两半）：世界停摆、玩法那条的交还、菜单意图的
  * 认领与交还，全在这一处。四块菜单互相排他——同时开着两块 overlay = 两份 uiStep 抢同一条意图通道，
@@ -400,20 +400,24 @@ type Overlay = Exclude<MenuOwner, 'cinematic'> | null
  * 书写的次数一格没多。这里留下的两格（`paused` 的一半与 `enabled`）时机是对的：overlay 的真相就在这里。
  */
 let overlay: Overlay = null
+let settingsReturn: 'title' | 'pause' | null = null
 
-function setOverlay(open: Overlay): void {
+function setOverlay(open: Overlay, tab?: 'ops'): void {
   overlay = open
-  if (open === 'panel') { mapUi.close(); descendPanel.close(); panel.show() }
+  if (open !== 'panel') settingsReturn = null
+  if (open === 'panel') { title?.hide(); mapUi.close(); descendPanel.close(); panel.show(tab) }
   else if (open === 'map') { panel.close(); descendPanel.close(); mapUi.show() }
   else if (open === 'descend') { panel.close(); mapUi.close(); descendPanel.show() }
   // 'dialogue' / 'title'：两块面板都收，但世界同样停摆、通道同样有人认领——
   // 走的是同一条腿，不给它们另开一套"只暂停不认领"的旁路（那正是两个主人的形状）。
   else { panel.close(); mapUi.close(); descendPanel.close() }
+  if (open === 'title') title?.show()
   // uiOwner：菜单读数的所有权（KI-062）——开着才发意图、关着一格都不发，也不抢浏览器的默认行为。
   // 玩法那条（enabled）与这条是两件事：世界停摆期间正是菜单需要读数的时候。
   // 世界停摆：只报「菜单在不在场」这一格（KI-387）——玩家自己按出来的那次暂停归 `PauseControl`
   // 的另一格管，overlay 的周期不许再把它覆盖掉（老写法 `time.paused = overlay !== null` 正是覆盖的那一句）。
   pause.holdByOverlay(overlay !== null)
+  pauseOverlay.setSuppressed(overlay !== null)
   // 这一格原来后面还跟着「所有权 = overlay」那一句。KI-390 把它搬进 `feedMenu()`：那里的值要**每帧**
   // 现算（overlay 之外还有过场那一格），留在这里就是拿事件时机去答一个每帧才成立的问题。
   // 过场期也夺输入，但**不写进这一格**（KI-392，理由写在 `cinematics` 后面那一段）：这一句的书写者只有
@@ -422,7 +426,17 @@ function setOverlay(open: Overlay): void {
 }
 
 /** 调音桩/商摊面板（既有调用点的名字不变：`__caesura.setPanelOpen`、面板的 onRequestClose） */
-function setPanelOpen(open: boolean): void { setOverlay(open ? 'panel' : null) }
+function setPanelOpen(open: boolean): void {
+  if (open) { settingsReturn = null; setOverlay('panel'); return }
+  const back = settingsReturn
+  settingsReturn = null
+  setOverlay(back === 'pause' ? null : back)
+}
+
+function openSettings(from: 'title' | 'pause'): void {
+  setOverlay('panel', 'ops')
+  settingsReturn = from
+}
 /** 地图（`map` 键与面板的 onRequestClose 走它） */
 let deepHintShown = false
 function setMapOpen(open: boolean): void {
@@ -1147,13 +1161,14 @@ const core = {
  * 排队的照常接上），玩法那条闸门与 `enabled` 一字未动 ⇒ 过场期间"能动"仍然是不许的，只是终于能跳了。
  */
 function feedMenu(): void {
-  const owner: MenuOwner | null = overlay ?? (cinematics.inputLocked ? 'cinematic' : null)
+  const owner: MenuOwner | null = overlay ?? (cinematics.inputLocked ? 'cinematic' : pause.pausedByUser ? 'pause' : null)
   input.uiOwner = owner
   if (owner === 'panel') panel.uiStep(input.uiEdges)
   else if (owner === 'map') mapUi.uiStep(input.uiEdges)
   else if (owner === 'descend') descendPanel.uiStep(input.uiEdges)
   else if (owner === 'dialogue') dialogueBox.uiStep(input.uiEdges)
   else if (owner === 'title') title?.uiStep(input.uiEdges)
+  else if (owner === 'pause') pauseOverlay.uiStep(input.uiEdges)
   else if (owner === 'cinematic') readCinematicExit(input.uiEdges, () => skipCinematic())
 }
 
@@ -1333,7 +1348,8 @@ if (freshBoot) {
       logRunOrigin()
       void startRun(slot)
     },
-    listSlots: () => saveRoster.list()
+    listSlots: () => saveRoster.list(),
+    onSettings: () => openSettings('title')
   }, originId)
   /* 环这时候还**不能**开：`GameLoop.tickFrame` 的 `time.tick++` 写在 `paused` 判断之外，开着环站在
      标题屏会把「boot 真被门挡住（`time.tick` 停在 0）」那条 KI-031② 的实测读数假报成已放行。
@@ -1361,10 +1377,8 @@ window.addEventListener('keydown', (e) => {
   const inField = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)
   if (!shouldCycleLang(e, { overlayOpen: overlay !== null, capturing: input.isCapturing, inField })) return
   e.preventDefault()
-  const lang = setLang(nextLang(getLang()))
+  const lang = cycleLang()
   bus.emit('ui.notify', { text: t('ui.notify.langSwitched', { name: t(LANG_NAME_KEY[lang]) }), kind: 'info' })
-  // 给读屏与浏览器一份当前语言（`zh-TW` 用标准子标签 `zh-Hant`，不是 `zh-TW` 以外的自造拼写）
-  document.documentElement.lang = lang === 'en' ? 'en' : lang === 'zh-TW' ? 'zh-Hant' : 'zh-CN'
 })
 
 ;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, lights, player, ai, combat, lock, rig, bus, streaming, surface, greybox, wallGreybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, saveRoster, checkpoints, rpg, settlement, panel, setPanelOpen, mapUi, setMapOpen, descendRun, descendPanel, setDescendOpen, quests, dialogueEngine, dialogueBox, openDialogue, debugPanels, debugWires, refreshRpg, observe, saveNow: () => saves.save('autosave'), get title() { return title } }

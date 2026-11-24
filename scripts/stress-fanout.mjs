@@ -13,7 +13,7 @@
  * 用法：
  *   node scripts/stress-fanout.mjs                          # 全站页 ×1 并发扇出
  *   node scripts/stress-fanout.mjs --multiplier=5           # 每页 5 份 = ~450 并发请求
- *   node scripts/stress-fanout.mjs --proxy=http://127.0.0.1:7897
+ *   node scripts/stress-fanout.mjs --proxy=<your-proxy-url>  # 可选；默认直连
  *
  * 退出码：0 = 全部 200 且非空；1 = 有失败；2 = 参数/网络/解析错误。
  */

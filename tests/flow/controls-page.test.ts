@@ -23,6 +23,7 @@ import { QualityStore } from '@/settings/Quality'
 import { actionLabel, intentLabel, padLabel } from '@/ui/actionLabels'
 import { makeOpsHandles } from '@/ui/OpsHandles'
 import type { Vec3 } from '@/combat/EntityStats'
+import { setLang } from '@/i18n/Lang'
 
 /**
  * KI-337：`docs/ui-ux.md` §5.1 那句「全动作逐行可改」与 §5.1/§6 那五格玩法设置的**玩家入口**。
@@ -175,6 +176,31 @@ function rig(withOps = true, onOpsTab = true, saves: SavePanelDeps = NO_SAVES): 
 }
 
 describe('KI-337 「操作」页签是现推的：没接把手就没有这一页', () => {
+  it('show(\'ops\') 从外部直接打开操作页；普通 show() 仍尊重玩家上次选的页', () => {
+    const r = rig(true, false)
+    r.p.show('ops')
+    expect(html(r.p)).toContain('data-act="arm"')
+    click(r.p, 'tab', 'tune')
+    r.p.close()
+    r.p.show()
+    expect(html(r.p)).toContain('data-act="tab" data-arg="tune"')
+    expect(html(r.p)).not.toContain('data-act="arm"')
+  })
+
+  it('重开面板时页签跟随当前语言，不沿用模块加载时的文字', () => {
+    const r = rig(true, false)
+    r.p.show('ops')
+    expect(html(r.p)).toContain('data-act="tab" data-arg="ops" class="sel">操作</button>')
+    r.p.close()
+    try {
+      setLang('en')
+      r.p.show()
+      expect(html(r.p)).toContain('data-act="tab" data-arg="ops" class="sel">Ops</button>')
+    } finally {
+      setLang('zh')
+    }
+  })
+
   it('接了 ⇒ 名册含有能点进的「操作」页签；没接 ⇒ 仍为九个页签', () => {
     expect(html(rig(true).p), '把手接上了就要有能点进去的格子').toContain('data-act="tab" data-arg="ops"')
     const without = html(rig(false).p)

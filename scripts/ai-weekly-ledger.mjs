@@ -10,7 +10,7 @@
  *   ③ "echo" = 同款句式"线一次一月一回响"作为 WorldEcho line（26 字以内）
  *   ④ usage 账单 ingestion in admin/ai-cache-metrics.json · schema=1
  *
- * 模式=`--live` 才出网（Clash 7897 / aizzz）；默认为 dry-run。API key 只从 env 读。
+ * 模式=`--live` 才出网（默认直连 / aizzz；需要代理才显式设 CAESURA_LLM_PROXY）；默认为 dry-run。API key 只从 env 读。
  * 玩家进程零 LLM；这是作者侧产物，人工闸后落库。
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'

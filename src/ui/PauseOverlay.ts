@@ -1,5 +1,5 @@
 import { PauseControl } from '@/core/PauseControl'
-import { t } from '@/i18n/Lang'
+import { getLang, t } from '@/i18n/Lang'
 
 /**
  * 玩家手动暂停的「止音仪典」（Phase F-45）。
@@ -52,6 +52,10 @@ const CSS = `
 .pause-overlay .sub { position: relative; margin-top: 6px; font-size: 13px; letter-spacing: .6em; color: rgba(201,180,88,.6); text-indent: .6em; }
 .pause-overlay .hint { position: relative; margin-top: 22px; font-size: 12px; letter-spacing: .18em; color: rgba(232,223,203,.5); }
 .pause-overlay .rule { position: relative; width: 64px; height: 1px; margin: 20px auto 0; background: linear-gradient(90deg, transparent, rgba(201,180,88,.7), transparent); }
+.pause-overlay .settings { position: relative; margin-top: 20px; padding: 8px 22px; border: 1px solid rgba(201,180,88,.45);
+  background: rgba(201,180,88,.08); color: #e8dfcb; font: inherit; font-size: 12px; letter-spacing: .18em; cursor: pointer; pointer-events: auto; }
+.pause-overlay .settings:hover { border-color: #ffb86b; color: #ffd98a; }
+.pause-overlay .settings:focus-visible { outline: 2px solid #ffd98a; outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) {
   .pause-overlay .ring, .pause-overlay .ring.ring-b, .pause-overlay h1 { animation: none; opacity: 1; transform: translate(-50%, -50%); }
   .pause-overlay .hint { animation: none; -webkit-text-fill-color: rgba(232,223,203,.6); color: rgba(232,223,203,.62); background: none; }
@@ -60,14 +64,16 @@ const CSS = `
 
 export interface PauseOverlayHooks {
   pause: PauseControl
-  /** Only override hook optional; not used by default */
   onToggle?: (paused: boolean) => void
+  onSettings?: () => void
 }
 
 export class PauseOverlay {
   private readonly root: HTMLDivElement
   private readonly hooks: PauseOverlayHooks
   private lastPaused = false
+  private lastLang = getLang()
+  private suppressed = false
 
   constructor(hooks: PauseOverlayHooks) {
     this.hooks = hooks
@@ -77,9 +83,11 @@ export class PauseOverlay {
     this.root.id = 'pause-overlay'
     this.root.className = 'pause-overlay'
     this.root.setAttribute('aria-hidden', 'true')
-    this.root.setAttribute('aria-role', 'presentation')
-    this.root.innerHTML = `<div class="panel"><div class="ring"></div><div class="ring ring-b"></div><div class="seal" aria-hidden="true">${t('ui.pause.seal')}</div><div class="seal seal-b" aria-hidden="true">${t('ui.pause.sealB')}</div><h1 class="glyph">${t('ui.pause.glyph')}</h1><div class="sub">${t('ui.pause.sub')}</div><div class="rule"></div><div class="hint">${t('ui.pause.hint')}</div></div>`
+    this.render()
     document.body.appendChild(this.root)
+    this.root.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('[data-act="settings"]')) this.hooks.onSettings?.()
+    })
   }
 
   static injectCss(): void {
@@ -90,9 +98,26 @@ export class PauseOverlay {
     document.head.appendChild(style)
   }
 
+  setSuppressed(suppressed: boolean): void {
+    this.suppressed = suppressed
+    this.update()
+  }
+
+  uiStep(intents: ReadonlySet<import('@/core/Input').UiIntent>): void {
+    if (this.isOpen && intents.has('confirm')) this.hooks.onSettings?.()
+  }
+
   /** 被 main.ts 每帧调用——真正的紧缩来源是 PauseControl（worldPaused）*/
+  private render(): void {
+    this.root.innerHTML = `<div class="panel"><div class="ring"></div><div class="ring ring-b"></div><div class="seal" aria-hidden="true">${t('ui.pause.seal')}</div><div class="seal seal-b" aria-hidden="true">${t('ui.pause.sealB')}</div><h1 class="glyph">${t('ui.pause.glyph')}</h1><div class="sub">${t('ui.pause.sub')}</div><div class="rule"></div><div class="hint">${t('ui.pause.hint')}</div><button type="button" class="settings" data-act="settings">${t('ui.pause.settings')}</button></div>`
+  }
+
   update(): void {
-    const paused = this.hooks.pause.pausedByUser   // 只看「玩家那一格」，菜单 overlay 不算（不另做一次停摆声明）
+    if (this.lastLang !== getLang()) {
+      this.lastLang = getLang()
+      this.render()
+    }
+    const paused = this.hooks.pause.pausedByUser && !this.suppressed
     if (paused === this.lastPaused) return
     this.lastPaused = paused
     this.root.classList.toggle('on', paused)

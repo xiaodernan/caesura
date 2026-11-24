@@ -99,7 +99,7 @@ describe('KI-390 乙案：第五格主人在 core 那一侧（A 组）', () => {
 
   it('第五格**不是**一条 overlay：过场不许把世界时间冻住（`advance` 会跟着停）', () => {
     const decl = (mainSrc.match(/type Overlay =.*/) || ['（读不到这一行）'])[0]
-    expect(decl, `overlay 的值域要从「MenuOwner」派生并排掉第五格，现读「${decl.trim()}」`).toContain(`Exclude<MenuOwner, 'cinematic'>`)
+    expect(decl, `overlay 的值域要从「MenuOwner」派生并排掉过场与手动暂停，现读「${decl.trim()}」`).toContain(`Exclude<MenuOwner, 'cinematic' | 'pause'>`)
     // 量在 live 那一路，不量原文：`setOverlay` 体内本来就有一句 KI-392 的注释写着播放器的名字，
     // 按原文判会让一条**说清了规矩的注释**把形状门锁死（与 ui-intents 那把数 `uiOwner` 次数的尺同族）。
     const body = region(mainLive, 'function setOverlay', 'function setPanelOpen', '`setOverlay` 那一段')

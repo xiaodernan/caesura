@@ -95,6 +95,29 @@ const ZH: Record<string, string> = {
   'ui.title.hint.newgame': '本机没有可续的存档',
   'ui.title.hint.manual': '新来的人：Tab 开地图 · 调音桩 → 手册，那就是这一局的说明书',
   'ui.title.quickstart': '开 始 · 直接入场',
+  'ui.title.settings': '设置 · 操作',
+  'origin.tuner': '调律者学徒',
+  'origin.tuner.blurb': '在仪典前被教会收留的孩子。六维均衡，什么都能学，什么都不精。',
+  'weapon.tuningSword': '调律剑',
+  'origin.drummer': '鼓手遗孤',
+  'origin.drummer.blurb': '驼鼓踏碎了他家的墙。他活下来，从此用比鼓更沉的东西回话。',
+  'weapon.fortissimoGreatsword': '强音大剑',
+  'origin.player': '弦坊伶人',
+  'origin.player.blurb': '在弦坊里靠一把枪的距离感活着：不必贴身，也能把音钉死在墙上。',
+  'weapon.drawpinSpear': '引针枪',
+  'origin.scavenger': '哑带拾晶人',
+  'origin.scavenger.blurb': '哑带上长大的拾晶人。耳朵比谁都灵，口袋也比谁都鼓（拾取音色石 +10%）。',
+  'weapon.overtoneBow': '泛音弓',
+  'origin.scavenger.passive': '拾取音色石 +10%',
+  'origin.choir': '旧唱诗班',
+  'origin.choir.blurb': '仪典失败那天的幸存唱者。她记得半句没唱完的句子——那是莉安的线索。',
+  'weapon.tuningForkStaff': '律具·音叉杖',
+  'attr.fundamental': '基音',
+  'attr.fretwork': '指法',
+  'attr.timbre': '音色',
+  'attr.resonator': '腔体',
+  'attr.overtone': '泛音',
+  'attr.dissonance': '失谐',
   'ui.title.quickstart.hint': '按 Enter 开始',
   'ui.title.tip.quickstart': '一键入场 · 记录按下',
   'ui.title.links.aria': '游记 · 余响集（九十二篇全集）世界谱',
@@ -688,6 +711,7 @@ const ZH: Record<string, string> = {
   'ui.pause.sealB': '音',
   'ui.pause.glyph': '止',
   'ui.pause.sub': '已暂停',
+  'ui.pause.settings': '设置 · 操作',
   'ui.region.enter.sub': '举起你的钟壳吧，你有的时候到了',
   'ui.boot.online': '[止音纪元] 已上线 —— WASD 移动 / Shift 加速 / Ctrl 翻滚 / 鼠标左键 攻击 / 鼠标右键 格挡 / F 防御 / G 弹反 / Q 锁定 / E 交互（优先）/ 处决（处决·背刺）/ 1·2·3 换装 / R·C 乐章战技一·二 / Tab 调音桩面板（需站在调音桩前）/ E 与角色交谈 / 1-9 选对话选项 / Esc 暂停',
   'ui.notify.weaponSlotLocked': '第 ${n} 把武器：尚未拥有',
@@ -770,6 +794,29 @@ const EN: Record<string, string> = {
   'ui.title.hint.newgame': 'No save yet',
   'ui.title.hint.manual': 'New here? Tab for the map · a tuning peg gives you the "Manual" tab — that is the game\'s primer',
   'ui.title.quickstart': 'BEGIN · ENTER THE WORLD',
+  'ui.title.settings': 'Settings · Controls',
+  'origin.tuner': 'Tuner Apprentice',
+  'origin.tuner.blurb': 'A child taken in by the Church before the Rite. Balanced in all six arts; master of none.',
+  'weapon.tuningSword': 'Tuning Sword',
+  'origin.drummer': 'Drummer Orphan',
+  'origin.drummer.blurb': 'The caravan drum broke his home. He survived, and answers since with things heavier than drums.',
+  'weapon.fortissimoGreatsword': 'Fortissimo Greatsword',
+  'origin.player': 'Stringhouse Minstrel',
+  'origin.player.blurb': 'A stringhouse player who lives by the distance of a gun: no need to close in to pin a note to the wall.',
+  'weapon.drawpinSpear': 'Drawpin Spear',
+  'origin.scavenger': 'Mutebelt Scavenger',
+  'origin.scavenger.blurb': 'Raised among the mute belts, with the sharpest ear and the fullest pockets. Timbrite pickup is increased by 10%.',
+  'weapon.overtoneBow': 'Overtone Bow',
+  'origin.scavenger.passive': 'Timbrite pickup +10%',
+  'origin.choir': 'Old Choir Survivor',
+  'origin.choir.blurb': 'A singer who survived the failed Rite. She remembers half an unfinished line — a clue to Lian.',
+  'weapon.tuningForkStaff': 'Tuning-Fork Staff',
+  'attr.fundamental': 'Fundamental',
+  'attr.fretwork': 'Fretwork',
+  'attr.timbre': 'Timbre',
+  'attr.resonator': 'Resonator',
+  'attr.overtone': 'Overtone',
+  'attr.dissonance': 'Dissonance',
   'ui.title.quickstart.hint': 'Press Enter to Begin',
   'ui.title.tip.quickstart': 'One-tap start · press recorded',
   'ui.title.links.aria': 'Atlas · The Aftermath (all 92) · World Codex',
@@ -1356,6 +1403,7 @@ const EN: Record<string, string> = {
   'ui.pause.sealB': '||',
   'ui.pause.glyph': '⏸',
   'ui.pause.sub': 'PAUSED',
+  'ui.pause.settings': 'Settings · Controls',
   'ui.region.enter.sub': 'Raise your bell-shell — the hour has come',
   'ui.boot.online': '[caesura] online — WASD/Shift/Ctrl-roll/LMB/RMB/F guard/G parry/Q lock/E interact(max)/execute(backstab)/1·2·3 equip/R·C skills I·II/Tab tuning peg (needs to be at the peg)/E talk to NPC/1-9 pick dialogue/Esc pause',
   'ui.notify.weaponSlotLocked': 'Weapon slot ${n} not owned yet',
@@ -1395,11 +1443,18 @@ export const setLang = (next: Lang): Lang => {
   try {
     if (typeof localStorage !== 'undefined') localStorage.setItem(STORE_KEY, current)
   } catch { /* noop */ }
+  if (typeof document !== 'undefined' && document.documentElement && typeof document.dispatchEvent === 'function') {
+    document.documentElement.lang = current === 'en' ? 'en' : current === 'zh-TW' ? 'zh-Hant' : 'zh-CN'
+    document.dispatchEvent(new CustomEvent<Lang>('caesura-language-change', { detail: current }))
+  }
   return current
 }
 
-/** 循环 简体 → 繁體 → EN（标题屏/任何三态切换共用） */
+/** 循环 简体 → 繁體 → EN。 */
 export const nextLang = (cur: Lang = current): Lang => (cur === 'zh' ? 'zh-TW' : cur === 'zh-TW' ? 'en' : 'zh')
+
+/** 循环 简体 → 繁體 → EN；语言状态与 DOM 通知由 setLang 一次落笔。 */
+export const cycleLang = (): Lang => setLang(nextLang(current))
 
 /**
  * 取词：${name} 占位会走 vars；缺词时回落 key 本身并保持一种安静。

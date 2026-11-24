@@ -80,22 +80,26 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 /**
- * 作者侧出网口径（KI-617）：本机 Clash Verge 在 127.0.0.1:7897 出网（aizzz 默认 403 直连）。
- * Node 原生 `fetch` 不认任何系统代理——显式注入 undici ProxyAgent 到 global dispatcher，唯一入口的形状：
- * 读 `CAESURA_LLM_PROXY`（精确到本项目）或 `HTTPS_PROXY`（标准给口），两者都没设 ⇒ 直连。
+ * 作者侧出网口径（KI-617 → KI-746 · 与 Clash Verge 解绑）：
+ * **默认直连**；只读项目专用的 `CAESURA_LLM_PROXY`——不再读通用的 `HTTPS_PROXY`/`HTTP_PROXY`。
+ * 原因：系统/父进程常残留 `HTTPS_PROXY=http://127.0.0.1:7897`（Clash 端口），
+ * Clash 没开时任何 undici fetch 都会 `ECONNREFUSED`；用户已停用 Clash，
+ * 项目必须与它彻底解绑、走正常网络。需要代理时**显式**设 `CAESURA_LLM_PROXY`（精确到本项目）；
+ * 不设就直连。Node 原生 `fetch` 不认系统代理——只有显式设了项目变量才注入 undici ProxyAgent。
  * 不内置任何代理主机；不捏造任何备用路由。
  * @param {NodeJS.ProcessEnv} [env] 可注 `fetch.env` 以测试夹具
  */
 const proxyDispatchers = new Map()
 export function applyAuthorProxyFromEnv(env = process.env) {
-  const proxy = env.CAESURA_LLM_PROXY || env.HTTPS_PROXY || env.https_proxy || env.HTTP_PROXY || env.http_proxy
+  // KI-746：只看项目专用变量；通用系统代理（HTTPS_PROXY 等）一律忽略 —— 与 Clash 解绑
+  const proxy = env.CAESURA_LLM_PROXY
   if (!proxy) return Promise.resolve({ ok: true, via: 'direct' })
   if (!proxyDispatchers.has(proxy)) {
     proxyDispatchers.set(proxy, (async () => {
       try {
         const { ProxyAgent, setGlobalDispatcher } = await import('undici')
         setGlobalDispatcher(new ProxyAgent(proxy))
-        return { ok: true, via: 'clash-proxy', proxy, note: 'Node fetch 经 Clash Verge 出网（aizzz 403 直连）' }
+        return { ok: true, via: 'proxy', proxy, note: '作者侧显式代理（CAESURA_LLM_PROXY）' }
       } catch (e) {
         return { ok: false, via: 'direct', error: String(e?.message || e) }
       }
@@ -105,16 +109,61 @@ export function applyAuthorProxyFromEnv(env = process.env) {
 }
 
 /**
+ * 代理端口**可达性预检**（KI-745 · API 关闭后的降级）。
+ *
+ * 【问题】curl 兜底用的是 `--max-time 180` ⇒ 代理端口没在监听时，
+ * 每次调用都要**等满 3 分钟**才失败。API 已关闭后，项目会长期处在「代理不通」的状态，
+ * 于是每个作者侧脚本都要在这 3 分钟上打转 —— CI 里就是纯粹的浪费。
+ *
+ * 【做法】调 curl 之前先探一下代理端口：**连不上就立刻返回**，绝不进 180 秒的长等。
+ * 探测本身用 TCP connect，超时给 1.5s（本机回环/局域网端口，1.5s 足够判定）。
+ *
+ * 【边界】探测只判「端口有没有人在听」，**不判**代理能不能真的出网 ——
+ * 那要真发一次请求才知道（交给 curl 自己的 --max-time）。
+ * ⇒ 端口通但代理坏的情况，仍由 curl 的 180s 上限兜底（不改变既有行为）。
+ *
+ * @param {string} proxy 形如 http://127.0.0.1:7897
+ * @returns {Promise<boolean>} true = 端口可达（值得再走 curl）
+ */
+export async function proxyReachable(proxy) {
+  if (!proxy) return false
+  let u
+  try {
+    u = new URL(proxy)
+  } catch {
+    return false
+  }
+  const port = Number(u.port || (u.protocol === 'https:' ? 443 : 80))
+  const host = u.hostname || '127.0.0.1'
+  const { connect } = await import('node:net')
+  return await new Promise((resolvePromise) => {
+    let settled = false
+    const done = (v) => { if (!settled) { settled = true; try { socket.destroy() } catch { /* noop */ }; resolvePromise(v) } }
+    const socket = connect({ host, port })
+    const timer = setTimeout(() => done(false), 1500)
+    socket.setNoDelay(true)
+    socket.once('connect', () => { clearTimeout(timer); done(true) })
+    socket.once('error', () => { clearTimeout(timer); done(false) })
+  })
+}
+
+/**
  * curl.exe 兜底（KI-617）：Sub2API 边缘对 undici/Node 默认 TLS 指纹本连即断
  * （`ECONNRESET: Client network socket disconnected before secure TLS connection was established`），
  * 而相同代理经系统 `curl.exe` / Python urllib 出口完全正常（5/5 HTTP 200）。
- * 触发条件：未注入 `fetchImpl`（mock 测试路径绝不走本兜底）且配置了 `CAESURA_LLM_PROXY` 或 `HTTPS_PROXY`。
+ * 触发条件：未注入 `fetchImpl`（mock 测试路径绝不走本兜底）且**显式**配置了 `CAESURA_LLM_PROXY`。
+ * KI-746：与 Clash 解绑——不再读通用 `HTTPS_PROXY`，只读项目专用变量；没设就直连、不走兜底。
  * 返回 `{ ok, status, raw, error }`；ok=false 时把 null 让给上层按原错抛出。
  */
 export async function curlSub2ApiFallback(url, headers, bodyObj, env = process.env) {
   // 读 proxy 走 env 入口参数（KI-441 围栏：.mjs 里绝不碰裸 env 读法）
-  const proxy = env.CAESURA_LLM_PROXY || env.HTTPS_PROXY || env.https_proxy
+  // KI-746：只看项目专用变量；系统通用代理一律忽略（与 Clash 解绑）
+  const proxy = env.CAESURA_LLM_PROXY
   if (!proxy) return null
+  // KI-745：代理端口不通 ⇒ 立刻放弃，绝不进去等 curl 的 180 秒上限
+  if (!(await proxyReachable(proxy))) {
+    return { ok: false, status: 0, raw: '', error: `proxy unreachable: ${proxy}（端口无监听 ⇒ 快速失败，不等 curl 超时）` }
+  }
   const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs')
   const { tmpdir } = await import('node:os')
   const { join } = await import('node:path')
@@ -368,7 +417,8 @@ export async function callLlm(body, { baseUrl, apiKey, fetchImpl } = {}) {
     throw err
   }
   const t0 = Date.now()
-  // 作者侧出网代理（Clash 7897）—— fetch 走 dispatcher；mock 注入时本调用是零副作用
+  // 作者侧出网代理（KI-746 · 与 Clash 解绑）——只认项目专用 CAESURA_LLM_PROXY；没设就直连
+  // 父进程即便残留 HTTPS_PROXY=127.0.0.1:7897 也会被 client 忽略，不再 ECONNREFUSED
   await applyAuthorProxyFromEnv()
   // fetchImpl 可注入：让上层网关的 deps.fetchImpl / 测试 mock 在流式通道同样生效。
   const doFetch = fetchImpl || globalThis.fetch

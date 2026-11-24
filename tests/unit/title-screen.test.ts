@@ -88,7 +88,7 @@ const SLOTS = [AUTOSAVE_SLOT, 'slot1', 'slot2', 'slot3']
 const roster = (over: Record<string, Partial<SlotCard>> = {}): SlotCard[] =>
   SLOTS.map((s) => card(s, over[s] ?? {}))
 
-interface Hit { news: string[]; continues: string[] }
+interface Hit { news: string[]; continues: string[]; settings: number }
 
 /** 把一记键码打进假窗口（那里只有 `Input` 的监听器，本屏自己一只都不挂）；`up` = 松开 */
 const fire = (code: string, up = false): void => {
@@ -98,10 +98,11 @@ const fire = (code: string, up = false): void => {
 
 async function screen(read: () => SlotCard[], failWith: string | null = null) {
   const { TitleScreen } = await import('@/ui/TitleScreen')
-  const hit: Hit = { news: [], continues: [] }
+  const hit: Hit = { news: [], continues: [], settings: 0 }
   const hooks: TitleHooks = {
     onNew: (id) => { hit.news.push(id) },
     onContinue: (slot) => { hit.continues.push(slot) },
+    onSettings: () => { hit.settings++ },
     // `failWith` 是 KI-386 的注入缝：把「问名册」这一问变成**问不出来**，其余一切走同一条通道
     listSlots: async () => { if (failWith !== null) throw new Error(failWith); return read() }
   }
@@ -161,7 +162,7 @@ describe('标题屏 · 定弦（KI-031②）', () => {
 
   it('名册还没读回来时点卡不开弦：那不是「没有档」，是「还不知道」', async () => {
     const { TitleScreen } = await import('@/ui/TitleScreen')
-    const hit: Hit = { news: [], continues: [] }
+    const hit: Hit = { news: [], continues: [], settings: 0 }
     let release: ((c: SlotCard[]) => void) | null = null
     const t = new TitleScreen({
       onNew: (id) => { hit.news.push(id) },
@@ -298,6 +299,34 @@ describe('标题屏 · 挑档续玩（KI-025②）', () => {
     press('Tab')
     expect(view(t)).toBe(before)
     expect(hit.news).toEqual([])
+    expect(hit.continues).toEqual([])
+  })
+
+  it('设置入口可点，也可只用方向键与 Enter 到达；不决定出身、不销毁标题屏', async () => {
+    const { t, hit, press, root } = await screen(() => roster({
+      autosave: EMPTY, slot1: EMPTY, slot2: EMPTY, slot3: EMPTY
+    }))
+    click(root, 'settings')
+    expect(hit.settings).toBe(1)
+    press('ArrowDown')
+    expect(view(t)).toContain('class="act sel" data-act="settings"')
+    press('Enter')
+    expect(hit.settings).toBe(2)
+    expect(hit.news).toEqual([])
+    expect(hit.continues).toEqual([])
+    expect(t.isOpen).toBe(true)
+    t.hide()
+    expect(t.isOpen).toBe(false)
+    t.show()
+    expect(t.isOpen).toBe(true)
+  })
+
+  it('有可读存档时从续档焦点向右也能到设置入口', async () => {
+    const { hit, press } = await screen(() => roster())
+    press('ArrowDown')
+    press('ArrowRight')
+    press('Enter')
+    expect(hit.settings).toBe(1)
     expect(hit.continues).toEqual([])
   })
 
@@ -606,7 +635,7 @@ describe('标题屏 · 名册问不出来（KI-386）', () => {
 
   it('反向臂·还没回来不等于问不出来：pending 时既不开弦也不能进挑档屏', async () => {
     const { TitleScreen } = await import('@/ui/TitleScreen')
-    const hit: Hit = { news: [], continues: [] }
+    const hit: Hit = { news: [], continues: [], settings: 0 }
     let release: ((c: SlotCard[]) => void) | null = null
     const t = new TitleScreen({
       onNew: (id) => { hit.news.push(id) },
@@ -706,6 +735,35 @@ describe('标题屏 · 按键教学说明 data-tip（KI-627）', () => {
     expect(s).toContain('Reads your last save')
     t.dispose()
     setLang('zh')
+  })
+
+  it('KI-746 · 已存在的标题屏点语言芯片时重算出出身卡', async () => {
+    const { setLang, getLang } = await import('@/i18n/Lang')
+    setLang('zh')
+    const { t } = await screen(() => roster())
+    const root = (t as unknown as { root: FakeEl }).root
+    const chip = (): void => {
+      const target = new FakeEl()
+      target.dataset = { langToggle: '' }
+      root.dispatch('click', { target })
+    }
+    try {
+      expect(view(t)).toContain('调律者学徒')
+      chip()
+      expect(getLang()).toBe('zh-TW')
+      expect(view(t)).toContain('調律者學徒')
+      chip()
+      expect(getLang()).toBe('en')
+      expect(view(t)).toContain('Tuner Apprentice')
+      expect(view(t)).toContain('Fundamental')
+      expect(view(t)).not.toContain('调律者学徒')
+      chip()
+      expect(getLang()).toBe('zh')
+      expect(view(t)).toContain('调律者学徒')
+    } finally {
+      t.dispose()
+      setLang('zh')
+    }
   })
 
   it('注入的 CSS 含 [data-tip] 悬停 + focus-visible tooltip 规则', async () => {

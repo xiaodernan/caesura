@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { resolve } from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
-import { getLang, setLang, t } from '@/i18n/Lang'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cycleLang, getLang, LANGS, setLang, t } from '@/i18n/Lang'
+import { codeLabel, codeLabelIn } from '@/core/Input'
 
 /**
  * 双语字典的同构门（i18n infra）。
@@ -37,7 +38,7 @@ const bodyOf = (block: string): Record<string, string> => {
   return out
 }
 
-afterEach(() => { setLang('zh') })
+afterEach(() => { setLang('zh'); vi.unstubAllGlobals() })
 
 describe('i18n Lang 双字典同构', () => {
   it('ZH 与 EN 的键集合逐键相同（排序后对比）', () => {
@@ -69,6 +70,16 @@ describe('i18n Lang 双字典同构', () => {
       const v = raw.replace(/\$\{[^}]*\}/g, ' ').replace(/\`[^\`]*\`/g, ' ')
       expect(v, `ZH 键 ${k} 里还夹着英文叙述`).not.toMatch(forbidden)
     }
+  })
+
+  it('英文操作页的鼠标键短名与中文同源，但不夹中文键名', () => {
+    expect(codeLabel('MouseLeft')).toBe('左键')
+    expect(codeLabel('MouseRight')).toBe('右键')
+    expect(codeLabel('MouseMiddle')).toBe('中键')
+    expect(codeLabelIn('MouseLeft', 'en')).toBe('LMB')
+    expect(codeLabelIn('MouseRight', 'en')).toBe('RMB')
+    expect(codeLabelIn('MouseMiddle', 'en')).toBe('MMB')
+    expect(codeLabelIn('KeyW', 'en')).toBe('W')
   })
 
   it('玩家手册 / 图鉴的中文块不夹杂英文（按键名与 <code> 标识符白名单）', () => {
@@ -118,5 +129,23 @@ describe('t() 的行为', () => {
     expect(t('stak.profile.name', { n: 2 })).toBe('配置文件 2')
     setLang('en')
     expect(t('stak.profile.name', { n: 2 })).toBe('Profile 2')
+  })
+
+  it('每次语言切换只发一个事件，并同步标准 html.lang', () => {
+    const events = new EventTarget()
+    const doc = Object.assign(events, { documentElement: { lang: '' } })
+    vi.stubGlobal('document', doc)
+    const seen: string[] = []
+    events.addEventListener('caesura-language-change', (event) => {
+      seen.push((event as CustomEvent<string>).detail)
+    })
+
+    expect(cycleLang()).toBe('zh-TW')
+    expect(doc.documentElement.lang).toBe('zh-Hant')
+    expect(cycleLang()).toBe('en')
+    expect(doc.documentElement.lang).toBe('en')
+    expect(cycleLang()).toBe('zh')
+    expect(doc.documentElement.lang).toBe('zh-CN')
+    expect(seen).toEqual([...LANGS.slice(1), LANGS[0]])
   })
 })
