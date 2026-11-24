@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "fb3e2a8918e0bacc6d27af6c9c1077bafde96cb1",
+  "head": "545c88952238116d14cddbf2f1d11ed4de23bfb6",
   "branch": "master",
-  "subject": "fix: KI-753 等待 artifact 元数据可见再 deploy（Found 0 竞态）",
-  "date": "2026-11-25T07:33:27+08:00",
+  "subject": "site-latest: fb3e2a8 (post-rebase reconcile)",
+  "date": "2026-11-25T07:34:33+08:00",
   "kv": {
     "KI.rows": 671,
     "KI.Implemented": 492,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/fb3e2a8918e0bacc6d27af6c9c1077bafde96cb1",
+    "url": "https://github.com/xiaodernan/caesura/commit/545c88952238116d14cddbf2f1d11ed4de23bfb6",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
