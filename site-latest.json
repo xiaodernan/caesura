@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "46c44cef08d471a6054383164dd76804c880bd7b",
+  "head": "f40d086b98e7aa63170d5b3d4a07cb8e9ae204a4",
   "branch": "master",
-  "subject": "site-latest: 2c952fa (post-rebase reconcile)",
-  "date": "2026-11-25T06:02:49+08:00",
+  "subject": "fix: KI-751 首页教学提示与固定开始按钮重叠（data-tip 覆盖 fixed）",
+  "date": "2026-11-25T06:39:23+08:00",
   "kv": {
-    "KI.rows": 668,
-    "KI.Implemented": 489,
+    "KI.rows": 669,
+    "KI.Implemented": 490,
     "KI.Partial": 169,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/46c44cef08d471a6054383164dd76804c880bd7b",
+    "url": "https://github.com/xiaodernan/caesura/commit/f40d086b98e7aa63170d5b3d4a07cb8e9ae204a4",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
