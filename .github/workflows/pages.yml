@@ -74,6 +74,20 @@ jobs:
         with:
           path: dist
 
+      # KI-753：upload 返回后 artifact 元数据在 GitHub API 侧偶发尚未可见（最终一致性），
+      # deploy-pages 在启动时立刻查元数据就会报 Found 0 artifact(s)。等它可见再进 deploy。
+      - name: Wait for artifact metadata to become visible
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in $(seq 1 20); do
+            n=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts?per_page=100" \
+              --jq '[.artifacts[] | select(.name == "github-pages")] | length' || echo 0)
+            if [ "$n" = "1" ]; then echo "artifact metadata visible (attempt $i)"; exit 0; fi
+            sleep 5
+          done
+          echo "::error::github-pages artifact still not visible after 100s"; exit 1
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
