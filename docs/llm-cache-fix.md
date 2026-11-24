@@ -1,6 +1,11 @@
 
 ---
 
+> **【当前状态 · 2026-11-24 更新】** 本文件以下各节是**历史排障实录**（记录当时真跑读数，保留不改）。
+> 但出网口径已变更：作者侧 API 已关闭，且**已与 Clash Verge 解绑**（KI-746/747）。
+> 现在 `caesura-llm-client.mjs` **默认直连、只读项目专用 `CAESURA_LLM_PROXY`（opt-in）**，不再读系统 `HTTPS_PROXY`/`HTTP_PROXY`。
+> 下文中「须走 Clash 7897」「三件套不变」等表述仅描述当时历史条件，**不是当前要求**；无须再启用 Clash。
+
 ## 十七 · 2026-11-15 实测复核（把 shard miss 当成常态）
 
 > 这一条记录的是「warm 不总是命中」的实拍，避免任何人（包括我）把「首轮必 miss，其余大约率命中」读成「每次调用都命中」。
@@ -23,7 +28,7 @@ $env:CAESURA_LLM_API_KEY='sk-（仅 env，不入库不进 git）'; npm run llm:w
 ### 前提
 
 - 出网被网关层按地理位置拒绝直连（`本站不对您所在的国家及地区进行商业服务`）。
-- 本机 Clash Verge 在 `127.0.0.1:7897` 上提供 HTTP/HTTPS 代理；用户明确指示「走我这个Clash Verge就行」。
+- （历史条件 · 已解绑）当时本机 Clash Verge 在 `127.0.0.1:7897` 上提供 HTTP/HTTPS 代理、用户指示走它；**现已改为默认直连，不再依赖 Clash**。
 - 切换 endpoint/模型用 `CAESURA_LLM_API_KEY` + `CAESURA_LLM_BASE_URL` + `CAESURA_LLM_MODEL` *环境变量*，不写死。
 - 文档中出现的任何 key 只是描述形态，不是真实值。
 
@@ -47,7 +52,7 @@ A/B 3 probe → cached=[4480, 0, 4480], prompt=[4633, 4633, 4633]
 
 - 真正的缓存命中指标还是 `usage.prompt_tokens_details.cached_tokens`。
 - 流式 vs 非流**不是**原因。
-- 限流节点：`api.aizzz.xyz` 出网需有本机 Clash Verge 代理才行（`127.0.0.1:7897`），否则 403；这是**找对出网口**，不是「调用方法」问题。
+- （历史条件 · 已解绑）当时 `api.aizzz.xyz` 出网需经本机 Clash 代理（`127.0.0.1:7897`）否则 403；**现已改为默认直连**，作者侧 API 也已关闭。
 - 本项目不需要把 `Scripts/caesura-llm-client.mjs` 的 `warmupPrefix()` 换实现；新 endpoint 同样支持 `prompt_cache_key`。
 
 ## 十九 · 2026-11-16 节点：aizzz · gpt‑6.1‑terra · Clash Verge 5 连发实拍
