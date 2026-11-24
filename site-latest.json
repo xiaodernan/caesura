@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "024a35a0c48924caa29411c6d20ffa01951397af",
+  "head": "a8863ab3fcb04c318352365f3a283e4dbe7ffe59",
   "branch": "master",
-  "subject": "fix: KI-752 说明书入口改贴左下，避开固定开始按钮的遮盖",
-  "date": "2026-11-25T07:03:04+08:00",
+  "subject": "chore(status): re-embed site-latest.json",
+  "date": "2026-11-24T23:04:14Z",
   "kv": {
     "KI.rows": 670,
     "KI.Implemented": 491,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/024a35a0c48924caa29411c6d20ffa01951397af",
+    "url": "https://github.com/xiaodernan/caesura/commit/a8863ab3fcb04c318352365f3a283e4dbe7ffe59",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
