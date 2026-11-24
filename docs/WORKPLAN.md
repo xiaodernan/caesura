@@ -696,3 +696,4 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | KI-750 | **第 93 篇《模上的第二道指印》**：双语新故事 + 全集/索引/控制台/教程/首页/README/i18n 全套对齐；atlas 生成器重算 93 篇；新故事测试 1 个 | KI-750 |
 | KI-751 | **首页重叠修复**：`#title button.qs-start{position:fixed}` 高特异度兜底，压过 data-tip 的 relative；浏览器量测重叠面积 0 + title-screen 1 腿 | KI-751 |
 | KI-752 | **说明书入口改贴左下**：避开标题屏右下固定开始按钮的遮盖；DOM 量测重叠 0 + boot-screen 1 腿 | KI-752 |
+| KI-753 | **Pages 部署竞态根治**：上传前删旧 attempt 同名 artifact + `actions:write`；admin-analytics 1 腿钉住顺序 | KI-753 |

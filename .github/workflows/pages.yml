@@ -9,6 +9,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: write # KI-753：重跑前需要删掉上一次 attempt 留下的 github-pages artifact
 
 concurrency:
   group: pages
@@ -55,6 +56,19 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
+      # KI-753：GitHub 平台偶发「Found 0 artifact(s)」，重跑又会变成
+      # 「Multiple artifacts named github-pages」（上一次 attempt 的 artifact 还在）。
+      # upload-pages-artifact 不会覆盖同名 artifact，deploy-pages 要求恰好一个。
+      # 上传前先把本 run 里上一次 attempt 的同名 artifact 删干净，让 rerun 也稳定。
+      - name: Remove stale github-pages artifact from a prior attempt
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ids=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts?per_page=100" \
+            --jq '.artifacts[] | select(.name == "github-pages") | .id' || true)
+          for id in $ids; do
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/actions/artifacts/${id}" >/dev/null || true
+          done
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

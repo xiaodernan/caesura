@@ -230,6 +230,14 @@ describe('admin · 静态页与部署接线（防悄悄脱落）', () => {
     /* dist 里的副本必须是真的 site-latest.json（含 nexus/master head），内容会被 build-site-latest.mjs 刷新 */
     expect(yml).toContain('site-latest.json')
   })
+  it('pages.yml 上传前清掉旧 attempt 的 github-pages artifact（KI-753 部署竞态）', () => {
+    const yml = read('.github/workflows/pages.yml')
+    expect(yml).toContain('actions: write')
+    expect(yml).toContain('Remove stale github-pages artifact from a prior attempt')
+    expect(yml).toContain('select(.name == "github-pages")')
+    expect(yml).toContain('-X DELETE')
+    expect(yml.indexOf('Remove stale github-pages artifact')).toBeLessThan(yml.indexOf('uses: actions/upload-pages-artifact@v3'))
+  })
   it('smoke-live 第 63 个入口：admin（42 端点） + AI 导演双 JSON 端点+ 篇十一..篇三十一故事页', () => {
     const sm = read('scripts/smoke-live.mjs')
     expect(sm).toContain("name: 'admin'")
