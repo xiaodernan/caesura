@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "3b8812838c142602c267500d0c00f02a25cfa8e8",
+  "head": "b42cf813f78b338b4c0cf898fcacd781430576f4",
   "branch": "master",
-  "subject": "fix: KI-746/747 与 Clash Verge 解绑 · 默认直连走正常网络",
-  "date": "2026-11-24T15:24:24+08:00",
+  "subject": "chore(status): re-embed site-latest.json",
+  "date": "2026-11-24T07:25:42Z",
   "kv": {
     "KI.rows": 665,
     "KI.Implemented": 486,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/3b8812838c142602c267500d0c00f02a25cfa8e8",
+    "url": "https://github.com/xiaodernan/caesura/commit/b42cf813f78b338b4c0cf898fcacd781430576f4",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
