@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "e54ff5632e396fb6e1b74726e63e3f10c023237e",
+  "head": "cb35d02bf4a7eb5daf460c975801fecdcb655796",
   "branch": "master",
-  "subject": "site-latest: b42cf81 (post-rebase reconcile)",
-  "date": "2026-11-24T15:25:59+08:00",
+  "subject": "docs: llm-cache-fix 标注已与 Clash 解绑(历史实录保留,现默认直连)",
+  "date": "2026-11-24T19:14:57+08:00",
   "kv": {
     "KI.rows": 665,
     "KI.Implemented": 486,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/e54ff5632e396fb6e1b74726e63e3f10c023237e",
+    "url": "https://github.com/xiaodernan/caesura/commit/cb35d02bf4a7eb5daf460c975801fecdcb655796",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
