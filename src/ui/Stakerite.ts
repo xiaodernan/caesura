@@ -67,6 +67,11 @@ const PLAYER_MANUAL: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">存档</span><span class="note">调音桩前按 E 休息并保存；首领倒下会自动存</span></div>
 <div class="row"><span class="name">配方</span><span class="note">Tab → 调音 → 查看派生面板（防御 / 负重上限 / 暴击率 / 暴击倍数 / 过载</span></div>
 
+<h2>深处与余响 · 无尽的那一片</h2>
+<div class="row"><span class="name">下潜</span><span class="note">Tab → 深处：每一层都有六处可看、三条可做；已审的层留下真旗标，更深的层按确定性复沓，不重复也不空。下面没有尽头，但你随时能回地表</span></div>
+<div class="row"><span class="name">余响集 · 九十五篇</span><span class="note">页脚「游记 · 余响集」进全集，可打印成册；「余响索引」按母题检索——盐、碗、船、簿、门、钟、光、线、潮、灰、风、空</span></div>
+<div class="row"><span class="name">世界谱</span><span class="note">页脚「世界谱」：七十余条世界词条，浏览器内检索、零联网零大模型——看不懂的名词都能在那里找到出处</span></div>
+
 <h2>结局 · 你的选择</h2>
 <div class="row"><span class="name">敲响第四口钟</span><span class="note">钟回，世界回响——她得到了那段缺了大半辈子的话</span></div>
 <div class="row"><span class="name">交给她熔掉</span><span class="note">她熔了第四口钟，世界回到「只有敲一下」的工坊安静</span></div>
@@ -108,6 +113,11 @@ const PLAYER_MANUAL: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">Tuning peg</span><span class="note">Tab toggles map · Map shows visited regions and where to go next</span></div>
 <div class="row"><span class="name">Save</span><span class="note">Rest at a peg (button E); boss death autosaves</span></div>
 <div class="row"><span class="name">Build stats</span><span class="note">Tab → Tune → derived stats: defense / load cap / crit rate / crit mul / overdrive</span></div>
+
+<h2>Descent & Aftermath · the endless part</h2>
+<div class="row"><span class="name">Descend</span><span class="note">Tab → Descent: every floor has six things to see and three things to do; charted floors leave real flags, deeper floors recombine the same world deterministically. No bottom, but you can always surface</span></div>
+<div class="row"><span class="name">The Aftermath · 95 stories</span><span class="note">Footer → the whole volume (printable); the Motif Atlas searches by motif — salt, bowl, boat, ledger, door, bell, light, line, tide, ash, wind, empty</span></div>
+<div class="row"><span class="name">World Codex</span><span class="note">Footer → World Codex: seventy-plus entries, searchable in-browser, zero network and zero LLM — every strange name has a source there</span></div>
 
 <h2>Endings · the choice is yours</h2>
 <div class="row"><span class="name">Sound the bell</span><span class="note">The bell returns; the world breathes again — she finally gets her missing sentence</span></div>

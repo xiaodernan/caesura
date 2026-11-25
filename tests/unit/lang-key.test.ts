@@ -76,4 +76,11 @@ describe('KI-742 · shouldCycleLang 真值表', () => {
     expect(manual).toContain('Language')
     expect(manual).toContain('Press L in the world')
   })
+
+  it('KI-759：说明书覆盖「深处 / 余响集 / 世界谱」三块已上线功能（中英两半都写）', () => {
+    const stak = read('src/ui/Stakerite.ts')
+    const manual = stak.slice(stak.indexOf('const PLAYER_MANUAL'), stak.indexOf('const PLAYER_ATLAS') > 0 ? stak.indexOf('const PLAYER_ATLAS') : undefined)
+    for (const s of ['下潜', '余响集 · 九十五篇', '世界谱', '六处可看']) expect(manual, `zh 缺：${s}`).toContain(s)
+    for (const s of ['Descend', 'The Aftermath · 95 stories', 'World Codex', 'six things to see']) expect(manual, `en 缺：${s}`).toContain(s)
+  })
 })
