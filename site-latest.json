@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "6896b0edd3b8b508a50372f5229f70a46371d7a5",
+  "head": "0e747740a66599f73d72d06f6c6f4df26a7bc7c1",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-25T03:53:56Z",
+  "subject": "feat: KI-759 说明书补全深处/余响集/世界谱（中英两半）",
+  "date": "2026-11-25T12:21:55+08:00",
   "kv": {
-    "KI.rows": 676,
-    "KI.Implemented": 497,
+    "KI.rows": 677,
+    "KI.Implemented": 498,
     "KI.Partial": 169,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/6896b0edd3b8b508a50372f5229f70a46371d7a5",
+    "url": "https://github.com/xiaodernan/caesura/commit/0e747740a66599f73d72d06f6c6f4df26a7bc7c1",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
