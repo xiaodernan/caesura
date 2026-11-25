@@ -1613,8 +1613,8 @@ export class Stakerite {
   private renderAtlas(): string {
     const lang = getLang()
     const header = lang === 'en'
-      ? 'The Aftermath · ninety-four full chapters<span style="opacity:.6"> (full text — stays in the game)</span>'
-      : '篇章 · 止音纪元 · 九十四篇全文<span style="opacity:.6">（原文直入——不出游戏）</span>'
+      ? 'The Aftermath · ninety-five full chapters<span style="opacity:.6"> (full text — stays in the game)</span>'
+      : '篇章 · 止音纪元 · 九十五篇全文<span style="opacity:.6">（原文直入——不出游戏）</span>'
     const chaptersHtml = STORY_CHAPTERS.map((c) => `
       <div class="chapter"><h3>${lang === 'en' ? `No.${c.no} · ${c.enTitle}` : `篇${c.no} · 《${c.zhTitle}》`}</h3>
         <div class="chapter-body">${lang === 'en' ? c.en : c.zh}</div></div>`).join('')

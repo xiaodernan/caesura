@@ -27,7 +27,7 @@ describe('Motif Atlas · 母题路径（六条四站线）', () => {
     const routes = JSON.parse(json![1])
     expect(routes).toHaveLength(6)
     const known = new Set([...HTML.matchAll(/class="card" href="[^"]*" data-no="(\d+)"/g)].map((m) => Number(m[1])))
-    expect(known.size).toBe(94)
+    expect(known.size).toBe(95)
     for (const route of routes) {
       expect(route.nos, `${route.id} 应为 4 站`).toHaveLength(4)
       expect(new Set(route.nos).size, `${route.id} 站号不得重复`).toBe(4)
@@ -46,8 +46,8 @@ describe('Motif Atlas · 母题路径（六条四站线）', () => {
   })
 
   it('每张卡都有 step-tag 槽位与 data-no', () => {
-    expect((HTML.match(/data-no="\d+"/g) || []).length).toBe(94)
-    expect((HTML.match(/class="tag step-tag"/g) || []).length).toBe(94)
+    expect((HTML.match(/data-no="\d+"/g) || []).length).toBe(95)
+    expect((HTML.match(/class="tag step-tag"/g) || []).length).toBe(95)
   })
 
   it('路径与母题筛选互斥清理（同一时刻只有一条线索）', () => {

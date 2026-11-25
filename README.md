@@ -35,14 +35,14 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 - 《账本》（短篇原创之四）：<https://xiaodernan.github.io/caesura/story/ledger/>（休垒 · Meg 不敢合上的那一页账 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《回声庭园》（短篇原创之五）：<https://xiaodernan.github.io/caesura/story/garden/>（余响新陆 · 第六境 · 旧钟的主人 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《雨审判》（短篇原创之六）：<https://xiaodernan.github.io/caesura/story/tribunal/>（余响新陆 · 雨钟谷地 · 雨罪审判者 · 七年一庭 · 双语对照 · 零 LLM · 2026-11-15） ·  
-- **余响索引**（母题检索 · 九十四篇一键筛 · 六条四站母题路径）: <https://xiaodernan.github.io/caesura/story/atlas/>（盐 / 碗 / 船 / 簿 / 门 / 钟 / 光 / 线 / 潮 / 灰 / 风 / 空 · 搜一个词找到所有写过它的故事 · 盐线 / 门线 / 船线 / 灰线 / 碗线 / 钟线互不抢篇 · 本机已读进度 · 零网络 · 零 LLM · 2026-11-22） ·  
+- **余响索引**（母题检索 · 九十五篇一键筛 · 六条四站母题路径）: <https://xiaodernan.github.io/caesura/story/atlas/>（盐 / 碗 / 船 / 簿 / 门 / 钟 / 光 / 线 / 潮 / 灰 / 风 / 空 · 搜一个词找到所有写过它的故事 · 盐线 / 门线 / 船线 / 灰线 / 碗线 / 钟线互不抢篇 · 本机已读进度 · 零网络 · 零 LLM · 2026-11-22） ·  
 - 《碗沿的缺口》（短篇原创之八十七）：<https://xiaodernan.github.io/caesura/story/the-chip-on-the-rim/>（回廊钟·碗沿的缺口 · 被日子磨圆 · 缺口朝里 · 不是所有缺都要补 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-22） ·  
 - 《门缝的风》（短篇原创之八十八）：<https://xiaodernan.github.io/caesura/story/the-wind-at-the-seam/>（回廊钟·门缝的风 · 风每年都来 · 缝一直都在 · 不是所有进来的都要留住 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-22） ·  
 - 《风在灰上写字》（短篇原创之八十九）：<https://xiaodernan.github.io/caesura/story/the-wind-writes-on-the-ash/>（回廊钟·冷火塘 · 灰替风记账 · 线每天换方向 · 有些账不抄下来才不会被记成债 · 双语对照 · 零 LLM · 2026-11-22） ·  
 - 《空着的一格》（短篇原创之九十）：<https://xiaodernan.github.io/caesura/story/the-one-left-empty/>（回廊钟·东墙四十七格灯龛 · 最末一格空着 · 墙要留一格空着，数才数得下去 · 不是所有的空都要填满 · 双语对照 · 零 LLM · 2026-11-22） ·  
 - 《未铸之钟》（短篇原创之九十一）：<https://xiaodernan.github.io/caesura/story/the-bell-not-cast/>（回廊钟·坡下铸钟坊 · 三十九年没开模的泥壳 · 不是所有的钟都要浇出来 · 只留下一个钟形的空 · 等一个不打算敲的人来听 · 双语对照 · 零 LLM · 2026-11-22） ·  
 - 《浇口上的黑》（短篇原创之九十二）：<https://xiaodernan.github.io/caesura/story/the-black-at-the-pour-gate/>（回廊钟·铸钟坊 · 浇口上那圈黑是蜡钟留下的全部 · 先刻蜡钟、裹泥、火烧、蜡走烟留；铜没有来 · 薄簿：先有蜡，后有黑，未铸；守坊人补：它来过 · 双语对照 · 零 LLM · 2026-11-22） ·  
-- 《余响集》（全集页 · 整册入口 · 支持一键打印成纸质卷）：<https://xiaodernan.github.io/caesura/story/anthology/>（九十四篇整册 · 史诗般总起预告 · EPIC-VII 实写落地 · 2026-11-22 增篇九十二《浇口上的黑》） ·  
+- 《余响集》（全集页 · 整册入口 · 支持一键打印成纸质卷）：<https://xiaodernan.github.io/caesura/story/anthology/>（九十五篇整册 · 史诗般总起预告 · EPIC-VII 实写落地 · 2026-11-22 增篇九十二《浇口上的黑》） ·  
 - 《霜锤》（短篇原创之七）：<https://xiaodernan.github.io/caesura/story/frostbell/>（霜锤崖 · 末任钟匠 · 冻成冰的声音 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《千门》（短篇原创之八）：<https://xiaodernan.github.io/caesura/story/doors/>（回廊钟 · 一千扇门 · 守门人 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《石喉》（短篇原创之九）：<https://xiaodernan.github.io/caesura/story/stonethroat/>（低音之城 · 石喉母亲 · 不需要货币的音 · 双语对照 · 零 LLM · 2026-11-15） ·  

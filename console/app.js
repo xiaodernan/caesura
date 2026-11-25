@@ -612,6 +612,9 @@
   '篇九十二': 'No. 92',
   '篇九十三': 'No. 93',
   '篇九十四': 'No. 94',
+  '篇九十五': 'No. 95',
+  '第二只碗': 'The Second Bowl',
+  '第九十五篇 · 第二只碗': 'No. 95 · The Second Bowl',
   '替人记的雨': 'The Rain Kept for Another',
   '第九十四篇 · 替人记的雨': 'No. 94 · The Rain Kept for Another',
 
@@ -959,7 +962,7 @@
   '创世 · 鸣响之前 · 最后的铸钟人': 'Creation · before the sounding · The Last Bell-Smith',
   '九十二篇都是《止音纪元》的人间注脚——每一篇双语对照、零 LLM；完整全文见': 'The ninety-two stories are The Epoch of Hush in mortal footnotes — each one bilingual, zero LLM; the full volume:',
   '三十七篇都是《止音纪元》的人间注脚——每一篇双语对照、零 LLM；完整全文见': 'The thirty-seven stories are The Epoch of Hush in mortal footnotes — each one bilingual, zero LLM; the full volume:',
-  '（约四百六十分钟 · 九十二篇整册可读）': '(about 460 minutes · read all ninety-four)',
+  '（约四百六十分钟 · 九十二篇整册可读）': '(about 460 minutes · read all ninety-five)',
   '（约一百八十五分钟 · 三十七篇整册可读）': '(about 185 minutes · read all thirty-seven)',
   '第四下还没人敲 · 留给还在路上的人 · 拾起': 'No one rings the fourth · kept for the one still on the way · gathered',
   '余响': 'Aftersound',

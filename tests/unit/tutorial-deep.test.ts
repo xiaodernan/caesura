@@ -51,7 +51,7 @@ describe('KI-738 · 教程页补上「深处」与「拾遗」', () => {
 
 describe('KI-738 · 页脚全集跟上 92 篇 + 叠字', () => {
   it('页脚补到第九十二篇（新链接都在，中英各一份）', () => {
-    for (const slug of ['the-unsent-page', 'the-empty-bowl', 'water-by-the-door', 'a-night-within', 'a-line-in-the-bowl', 'the-chip-on-the-rim', 'the-wind-at-the-seam', 'the-wind-writes-on-the-ash', 'the-one-left-empty', 'the-bell-not-cast', 'the-black-at-the-pour-gate', 'the-second-print-on-the-mould', 'the-rain-kept-for-another']) {
+    for (const slug of ['the-unsent-page', 'the-empty-bowl', 'water-by-the-door', 'a-night-within', 'a-line-in-the-bowl', 'the-chip-on-the-rim', 'the-wind-at-the-seam', 'the-wind-writes-on-the-ash', 'the-one-left-empty', 'the-bell-not-cast', 'the-black-at-the-pour-gate', 'the-second-print-on-the-mould', 'the-rain-kept-for-another', 'the-second-bowl']) {
       expect(html).toContain('/caesura/story/' + slug + '/')
     }
     expect(html).toContain('篇八十六 · 碗底的一线')
@@ -72,6 +72,8 @@ describe('KI-738 · 页脚全集跟上 92 篇 + 叠字', () => {
     expect(html).toContain('No. 93 · The Second Print on the Mould')
     expect(html).toContain('篇九十四 · 替人记的雨')
     expect(html).toContain('No. 94 · The Rain Kept for Another')
+    expect(html).toContain('篇九十五 · 第二只碗')
+    expect(html).toContain('No. 95 · The Second Bowl')
     expect(html).toContain('No. 82 · The Unsent Page')
   })
 

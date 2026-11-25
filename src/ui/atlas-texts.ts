@@ -4803,5 +4803,69 @@ export const STORY_CHAPTERS: StoryChapter[] = [
 <p class="coda">The age of hush has not ended. It has one more piece of evidence: the rain stopped thirty-seven years ago, and the ledger is still raining for two people.</p>`,
   },
 
+  {
+    no: 95,
+    zhTitle: "第二只碗",
+    enTitle: "The Second Bowl",
+    zh: `<p>休垒的灶台上摆着两只碗。一只边上有豁口，天天在用；另一只完好，从没人碰过。</p>
+<p>新来的人问：那只新碗是留给谁的？</p>
+<p>守灶的人说：留给她哥哥。他出门那天说，等他回来，一起吃。</p>
+<p>灶台被她擦了三十多年，木边磨出一道浅沟，正好放得下两只碗的足。新来的人后来也学会了：先摆两只，再坐下来吃。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她每天都摆两只。自己用有豁口的那只，另一只搁在对面，碗口朝上。</p>
+<p>新来的人问：他不会回来了吧？</p>
+<p>她说：我知道。可摆着，跟等，不是一回事。</p>
+<p>她说：等是把日子交出去；摆着，只是让「他可能不回来」这件事有个能坐下来的地方。</p>
+
+<div class="beat">· · ·</div>
+
+<p>年头久了，她的手开始抖。有一天豁口碗从手里滑下去，碎在灶前。</p>
+<p>她把那只完好的碗拿下来，洗了，盛上饭，坐在原来留给哥哥的位置上。</p>
+<p>碗底有一行小字，是很多年前刻的，早就磨得淡了：别等我，先吃。</p>
+<p>她看了很久，笑了一下。那天她一个人吃了两碗的量。</p>
+
+<div class="beat">· · ·</div>
+
+<p>第二天，她把碎了的豁口碗片收进罐子，埋在灶台下面。架子上只剩一只碗。</p>
+<p>新来的人问：不摆第二只了？</p>
+<p>她说：不用了。我已经坐过那个位置。知道那是什么滋味，就不必天天摆给他看。</p>
+<p>她又说：空位不是给别人留的，是给活人留的——让你知道自己曾在那儿放过一只碗，就够了。</p>
+
+<p class="coda">不是所有等待都要有结果才算数。</p>
+<p class="coda">有些碗一直在架子上，不是为了等一个人回来吃饭，是为了让「先吃」这两个字有人接住。</p>
+<p class="coda">止音纪元没有结束。它又多了一只碗：一只被用了半生，一只被留了半生，最后都被同一个坐下来的人吃完。</p>`,
+    en: `<p>On the hearth at Resthold stood two bowls. One had a chip in its rim and was used every day; the other was whole and no one had ever touched it.</p>
+<p>A newcomer asked: who is the new bowl for?</p>
+<p>The woman at the hearth said: for her brother. On the day he left he said that when he came back they would eat together.</p>
+<p>She had wiped that hearth for thirty years; a shallow groove had worn into the wood, just wide enough for the feet of two bowls. In time the newcomers learned too: set out two, then sit down and eat.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Every day she set out two bowls. She ate from the chipped one; the other sat across from her, its mouth turned up.</p>
+<p>The newcomer asked: he will not come back, will he?</p>
+<p>She said: I know. But setting a place is not the same as waiting.</p>
+<p>She said: waiting hands your days to someone else; setting a place only gives the fact that he may never return somewhere to sit down.</p>
+
+<div class="beat">· · ·</div>
+
+<p>In time her hands began to shake. One day the chipped bowl slipped from her grip and broke on the hearth stones.</p>
+<p>She took down the whole bowl, washed it, filled it, and sat in the place she had kept for her brother.</p>
+<p>On the bottom was a line of small characters cut years before, almost worn away: do not wait for me; eat first.</p>
+<p>She looked at it a long while, then smiled. That day she ate the portion of two.</p>
+
+<div class="beat">· · ·</div>
+
+<p>The next morning she gathered the pieces of the chipped bowl into a jar and buried them beneath the hearth. Only one bowl remained on the shelf.</p>
+<p>The newcomer asked: no second place today?</p>
+<p>She said: no need. I have sat in that place. Knowing what it is like is enough; I do not have to set it out for him every day.</p>
+<p>Then she said: an empty place is not kept for the absent. It is kept for the living — so that you know you once set a bowl there, and that is enough.</p>
+
+<p class="coda">Not every wait needs an ending to count.</p>
+<p class="coda">Some bowls stay on the shelf not for a person who may return, but so that the words "eat first" have someone to land on.</p>
+<p class="coda">The age of hush has not ended. It has one more bowl: one used for half a life, one kept for half a life, and both emptied at last by the same woman who sat down.</p>`,
+  },
+
 ]
 

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第二只碗 / The Second Bowl — CAESURA · 余响集 · 第九十五篇</title>
+<meta name="description" content="《止音纪元》余响集第九十五篇：休垒灶台上两只碗，一只天天用，一只留给说会回来吃饭的哥哥。碗碎那天，她坐到那个位置上，看见碗底一行小字：别等我，先吃。双语·零网络·零 LLM。 / The ninety-fifth piece of The Aftermath: two bowls on a hearth, one used daily, one kept for a brother who said he would return. When the chipped bowl breaks she sits in his place and finds, on the bottom: do not wait for me; eat first. Bilingual, offline." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔔</text></svg>">
+<style>
+  :root {
+    --gold: #e8c58a;
+    --gold-soft: rgba(232,197,138,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(30,22,14,.72);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#080706; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(232,197,138,.13), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(110,80,52,.22), transparent 62%),
+      radial-gradient(620px 420px at 14% 102%, rgba(150,120,90,.08), transparent 60%),
+      #080706;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(232,197,138,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(232,197,138,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(232,197,138,.22); box-shadow:0 0 16px rgba(232,197,138,.25); }
+
+  [data-lang="zh-TW"] .en-copy { display:none !important; }
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.2rem, 8vw, 3.6rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #e8c58a 28%, #c39a5e 58%, #77572f 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(232,197,138,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.8em; color:rgba(232,197,138,.55); font-size:.9rem; }
+  article p.coda { text-indent:0; text-align:center; color:var(--gold); font-size:.95rem; letter-spacing:.08em; margin-bottom:.9em; }
+  article p.coda:last-child { margin-top:1.8em; color:rgba(243,237,224,.7); font-size:.9rem; font-style:italic; }
+
+  .note { max-width:760px; margin:26px auto 0; font-size:.74rem; line-height:1.9; color:rgba(243,237,224,.42); text-align:center; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; }
+
+  footer { margin-top:44px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 22px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:1rem; line-height:1.96; } header.hero { padding:40px 8px 22px; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/the-second-print-on-the-mould/"><span class="zh-copy">前篇《模上的第二道指印》</span><span class="en-copy">Prev · “The Second Print on the Mould”</span></a>
+      <a href="/caesura/story/atlas/"><span class="zh-copy">余响索引</span><span class="en-copy">Motif Atlas</span></a>
+      <a href="/caesura/story/anthology/"><span class="zh-copy">余响集</span><span class="en-copy">The Aftermath</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <a href="/caesura/tutorial/"><span class="zh-copy">教程</span><span class="en-copy">Tutorial</span></a>
+      <a href="/caesura/"><span class="zh-copy">游戏</span><span class="en-copy">Game</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>余响集</b> · 第九十五篇</p>
+    <p class="kicker en-copy">Short story · <b>The Aftermath</b> · No. 95</p>
+    <h1 class="zh-copy">第二只碗</h1>
+    <h1 class="en-copy">The Second Bowl</h1>
+    <p class="subtitle zh-copy">休垒 · 灶台的两只碗 · 别等我，先吃</p>
+    <p class="subtitle en-copy">Resthold — two bowls on a hearth, and a line on the bottom: do not wait for me; eat first</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 6 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 零网络</p>
+    <p class="meta en-copy">about 6 minutes · same world as the <a href="/caesura/codex/">codex</a> · fully offline</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+<p>休垒的灶台上摆着两只碗。一只边上有豁口，天天在用；另一只完好，从没人碰过。</p>
+<p>新来的人问：那只新碗是留给谁的？</p>
+<p>守灶的人说：留给她哥哥。他出门那天说，等他回来，一起吃。</p>
+<p>灶台被她擦了三十多年，木边磨出一道浅沟，正好放得下两只碗的足。新来的人后来也学会了：先摆两只，再坐下来吃。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她每天都摆两只。自己用有豁口的那只，另一只搁在对面，碗口朝上。</p>
+<p>新来的人问：他不会回来了吧？</p>
+<p>她说：我知道。可摆着，跟等，不是一回事。</p>
+<p>她说：等是把日子交出去；摆着，只是让「他可能不回来」这件事有个能坐下来的地方。</p>
+
+<div class="beat">· · ·</div>
+
+<p>年头久了，她的手开始抖。有一天豁口碗从手里滑下去，碎在灶前。</p>
+<p>她把那只完好的碗拿下来，洗了，盛上饭，坐在原来留给哥哥的位置上。</p>
+<p>碗底有一行小字，是很多年前刻的，早就磨得淡了：别等我，先吃。</p>
+<p>她看了很久，笑了一下。那天她一个人吃了两碗的量。</p>
+
+<div class="beat">· · ·</div>
+
+<p>第二天，她把碎了的豁口碗片收进罐子，埋在灶台下面。架子上只剩一只碗。</p>
+<p>新来的人问：不摆第二只了？</p>
+<p>她说：不用了。我已经坐过那个位置。知道那是什么滋味，就不必天天摆给他看。</p>
+<p>她又说：空位不是给别人留的，是给活人留的——让你知道自己曾在那儿放过一只碗，就够了。</p>
+
+<p class="coda">不是所有等待都要有结果才算数。</p>
+<p class="coda">有些碗一直在架子上，不是为了等一个人回来吃饭，是为了让「先吃」这两个字有人接住。</p>
+<p class="coda">止音纪元没有结束。它又多了一只碗：一只被用了半生，一只被留了半生，最后都被同一个坐下来的人吃完。</p>
+    </div>
+    <div class="en-copy">
+<p>On the hearth at Resthold stood two bowls. One had a chip in its rim and was used every day; the other was whole and no one had ever touched it.</p>
+<p>A newcomer asked: who is the new bowl for?</p>
+<p>The woman at the hearth said: for her brother. On the day he left he said that when he came back they would eat together.</p>
+<p>She had wiped that hearth for thirty years; a shallow groove had worn into the wood, just wide enough for the feet of two bowls. In time the newcomers learned too: set out two, then sit down and eat.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Every day she set out two bowls. She ate from the chipped one; the other sat across from her, its mouth turned up.</p>
+<p>The newcomer asked: he will not come back, will he?</p>
+<p>She said: I know. But setting a place is not the same as waiting.</p>
+<p>She said: waiting hands your days to someone else; setting a place only gives the fact that he may never return somewhere to sit down.</p>
+
+<div class="beat">· · ·</div>
+
+<p>In time her hands began to shake. One day the chipped bowl slipped from her grip and broke on the hearth stones.</p>
+<p>She took down the whole bowl, washed it, filled it, and sat in the place she had kept for her brother.</p>
+<p>On the bottom was a line of small characters cut years before, almost worn away: do not wait for me; eat first.</p>
+<p>She looked at it a long while, then smiled. That day she ate the portion of two.</p>
+
+<div class="beat">· · ·</div>
+
+<p>The next morning she gathered the pieces of the chipped bowl into a jar and buried them beneath the hearth. Only one bowl remained on the shelf.</p>
+<p>The newcomer asked: no second place today?</p>
+<p>She said: no need. I have sat in that place. Knowing what it is like is enough; I do not have to set it out for him every day.</p>
+<p>Then she said: an empty place is not kept for the absent. It is kept for the living — so that you know you once set a bowl there, and that is enough.</p>
+
+<p class="coda">Not every wait needs an ending to count.</p>
+<p class="coda">Some bowls stay on the shelf not for a person who may return, but so that the words "eat first" have someone to land on.</p>
+<p class="coda">The age of hush has not ended. It has one more bowl: one used for half a life, one kept for half a life, and both emptied at last by the same woman who sat down.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">本篇为《余响集》双语对照 · 人工闸定稿 · 零网络 · 与<a href="/caesura/codex/">世界谱</a>同源世界观。<a href="/caesura/story/anthology/">全集：《余响集》</a> · <a href="/caesura/story/atlas/">母题检索：余响索引</a></span>
+    <span class="en-copy">“The Aftermath,” bilingual, offline, human-gated — same world as the <a href="/caesura/codex/">codex</a>. <a href="/caesura/story/anthology/">All stories</a> · <a href="/caesura/story/atlas/">Motif Atlas</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/the-one-left-empty/">篇九十 · 空着的一格</a> · <a href="/caesura/story/the-bell-not-cast/">篇九十一 · 未铸之钟</a> · <a href="/caesura/story/the-black-at-the-pour-gate/">篇九十二 · 浇口上的黑</a> · <a href="/caesura/story/the-second-print-on-the-mould/">篇九十三 · 模上的第二道指印</a> · <a href="/caesura/story/the-rain-kept-for-another/">篇九十四 · 替人记的雨</a> · <a href="/caesura/story/the-second-bowl/">篇九十五 · 第二只碗</a> · <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/story/atlas/">余响索引</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/the-wind-writes-on-the-ash/">No. 89 · The Wind Writes on the Ash</a> · <a href="/caesura/story/the-one-left-empty/">No. 90 · The One Left Empty</a> · <a href="/caesura/story/the-bell-not-cast/">No. 91 · The Bell Not Cast</a> · <a href="/caesura/story/the-black-at-the-pour-gate/">No. 92 · The Black at the Pour Gate</a> · <a href="/caesura/story/anthology/">All stories</a> · <a href="/caesura/story/atlas/">Motif Atlas</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'en' ? 'en-US' : (lang === 'zh-TW' ? 'zh-TW' : 'zh-CN'));
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+    if (window.__caesuraZhTW) {
+      if (lang === 'zh-TW' && window.__caesuraZhTW.applyToDocument) window.__caesuraZhTW.applyToDocument();
+      else if (lang === 'zh' && window.__caesuraZhTW.restoreOriginals) window.__caesuraZhTW.restoreOriginals();
+    }
+    btn.textContent = lang === 'zh' ? '繁體' : (lang === 'zh-TW' ? 'EN' : '简体');
+  }
+  if (btn) btn.addEventListener('click', function () {
+    var cur = root.getAttribute('data-lang'); apply(cur === 'zh' ? 'zh-TW' : (cur === 'zh-TW' ? 'en' : 'zh'));
+  });
+  apply(saved === 'en' || saved === 'zh-TW' ? saved : 'zh');
+})();
+</script>
+<script defer src="../../tracker.js"></script>
+<script defer src="/caesura/zh-tw-converter.js"></script>
+<script defer src="/caesura/read-progress.js"></script>
+</body>
+</html>
