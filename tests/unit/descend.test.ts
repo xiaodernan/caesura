@@ -62,9 +62,10 @@ describe('KI-737 · 已审十二层（逐字照表，不被派生改写）', () 
   })
 })
 
-describe('KI-737 · 复沓层（第 13 层起：确定性重组，不是复制粘贴）', () => {
+describe('KI-737 · 复沓层（已审层之后：确定性重组，不是复制粘贴）', () => {
+  const C = chartedDepthCount(sectors)
   it('每层都有六处可看、三条可做——深处也不许是空房间', () => {
-    for (const d of [13, 14, 25, 37, 100, 1000]) {
+    for (const d of [C + 1, C + 2, C + 3, C + 5, C + 30, C + 100]) {
       const floor = sectorAt(d, sectors)!
       expect(floor.charted).toBe(false)
       expect(floor.recurrence).toBeGreaterThanOrEqual(1)
@@ -75,13 +76,13 @@ describe('KI-737 · 复沓层（第 13 层起：确定性重组，不是复制�
   })
 
   it('同一深度两次派生逐字一致（无随机数、不读时钟）', () => {
-    for (const d of [13, 31, 200]) {
+    for (const d of [C + 1, C + 7, C + 50]) {
       expect(JSON.stringify(sectorAt(d, sectors))).toBe(JSON.stringify(sectorAt(d, sectors)))
     }
   })
 
   it('同一层里六处可看不重样（重组不许把同一句话贴两遍）', () => {
-    for (const d of [13, 19, 40, 77]) {
+    for (const d of [C + 1, C + 2, C + 5, C + 9]) {
       const marks = sectorAt(d, sectors)!.sector.marks
       expect(new Set(marks.map((m) => m.zh)).size).toBe(marks.length)
       expect(new Set(marks.map((m) => m.en)).size).toBe(marks.length)
@@ -90,7 +91,7 @@ describe('KI-737 · 复沓层（第 13 层起：确定性重组，不是复制�
 
   it('深处的一层不等于表里的任何一层（否则「复沓」只是一个说法）', () => {
     const chartedTitles = new Set(sectors.map((s) => s.titleZh))
-    for (const d of [13, 24, 25, 60]) {
+    for (const d of [C + 1, C + 2, C + 3, C + 9]) {
       const floor = sectorAt(d, sectors)!
       expect(chartedTitles.has(floor.sector.titleZh)).toBe(false)
       expect(floor.sector.marks.map((m) => m.zh).join('|')).not.toBe(sectors[0].marks.map((m) => m.zh).join('|'))
@@ -98,7 +99,7 @@ describe('KI-737 · 复沓层（第 13 层起：确定性重组，不是复制�
   })
 
   it('双语不夹杂：英文那一侧没有汉字，中文那一侧有汉字', () => {
-    for (const d of [13, 26, 51]) {
+    for (const d of [C + 1, C + 2, C + 5]) {
       const floor = sectorAt(d, sectors)!
       const en = [floor.sector.titleEn, floor.sector.soundEn, floor.sector.guideEn, floor.sector.personEn,
         ...floor.sector.marks.map((m) => m.en), ...floor.actions.flatMap((a) => [a.labelEn, a.narrativeEn])]
@@ -116,7 +117,7 @@ describe('KI-737 · 复沓层（第 13 层起：确定性重组，不是复制�
   })
 })
 
-describe('KI-737 · 下行语义（旗标只在前十二层落盘）', () => {
+describe('KI-737 · 下行语义（旗标只在已审层落盘）', () => {
   it('已审层做一次：立真旗标并留手记；第二次答 already，不重复写', () => {
     const { run, written, notes, flags } = makeRun()
     const flag = sectors[0].flags[0].flag
@@ -135,13 +136,13 @@ describe('KI-737 · 下行语义（旗标只在前十二层落盘）', () => {
 
   it('复沓层做三次：一条旗标都不写，但手记有三行且彼此可区分', () => {
     const { run, written, notes } = makeRun()
-    for (let i = 0; i < 3; i++) expect(run.choose(i, 13).ok).toBe(true)
+    for (let i = 0; i < 3; i++) expect(run.choose(i, chartedDepthCount(sectors) + 1).ok).toBe(true)
     expect(written).toEqual([])
     expect(run.journal.length).toBe(3)
     expect(new Set(run.journal.map((l) => l.zh)).size).toBe(3)
     expect(notes.length).toBe(3)
-    expect(run.done(13, 0)).toBe(true)
-    expect(run.choose(0, 13).reason).toBe('already')
+    expect(run.done(chartedDepthCount(sectors) + 1, 0)).toBe(true)
+    expect(run.choose(0, chartedDepthCount(sectors) + 1).reason).toBe('already')
   })
 
   it('done() 读的是真旗标（外部立了旗，面板立刻显示已做过）', () => {
@@ -159,7 +160,7 @@ describe('KI-737 · 下行语义（旗标只在前十二层落盘）', () => {
     expect(run.floor()?.depth).toBe(41)
     run.ascend()
     expect(run.depth).toBe(40)
-    run.choose(0, 13)
+    run.choose(0, chartedDepthCount(sectors) + 1)
     expect(run.journal.length).toBe(1)
     run.surface()
     expect(run.depth).toBe(1)
@@ -173,7 +174,7 @@ describe('KI-737 · 下行语义（旗标只在前十二层落盘）', () => {
   it('snapshot 是现读（depth / recurrence / 三条动作的做完状态）', () => {
     const { run } = makeRun()
     run.descend(); run.descend()
-    run.choose(0, 13)
+    run.choose(0, chartedDepthCount(sectors) + 1)
     const snap = run.snapshot()
     expect(snap.depth).toBe(3)
     expect(snap.charted).toBe(sectors.length)
@@ -217,7 +218,7 @@ describe('KI-737 · 接线与守卫（面板读真值、菜单有主、源码不
       for (const lang of ['zh', 'en'] as const) {
         setLang(lang)
         for (const k of keys) {
-          const out = t('ui.descend.' + k, { n: 1, charted: 12 })
+          const out = t('ui.descend.' + k, { n: 1, charted: sectors.length })
           expect(out).not.toBe('ui.descend.' + k)
           expect(out.trim().length).toBeGreaterThan(0)
           if (lang === 'en') expect(ZH_RE.test(out)).toBe(false)

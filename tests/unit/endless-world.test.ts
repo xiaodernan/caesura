@@ -43,12 +43,12 @@ describe('无尽开放世界生成器（KI-723）', () => {
   })
 
   it('真值护栏 sound=true，且表中落盘的扇区与现算一致', () => {
-    const study = endlessWorldStudy({ seed: 723, sectors: 12 })
+    const study = endlessWorldStudy({ seed: 723, sectors: 24 })
     expect(study.sound).toBe(true)
     expect(study.noEmptySector).toBe(true)
     expect(study.deterministic).toBe(true)
     const table = JSON.parse(readFileSync(new URL('../../src/data/json/endless-sectors.json', import.meta.url), 'utf8'))
-    expect(JSON.stringify(table)).toBe(JSON.stringify(generateWorld({ seed: 723, sectors: 12 })))
+    expect(JSON.stringify(table)).toBe(JSON.stringify(generateWorld({ seed: 723, sectors: 24 })))
   })
 
   it('中文叙述不夹英文、英文叙述不夹汉字（两种模式都干净）', () => {

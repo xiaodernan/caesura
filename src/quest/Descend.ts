@@ -4,15 +4,15 @@ import { endlessSectorsOf, type EndlessSector } from '@/quest/EndlessWorld'
  * src/quest/Descend.ts — KI-737「深处」：把 KI-723 的无尽扇区表接成**玩家真能走下去的一层**。
  *
  * ## 病
- * KI-723 造了 12 个扇区（每层 6 处可看、3 条可触旗标），`EndlessWorld` 也写好了 `sector()` /
+ * KI-723 造了已审扇区表（现为 24 层；每层 6 处可看、3 条可触旗标），`EndlessWorld` 也写好了 `sector()` /
  * `nextDepth()` / `describe()`——**但全仓没有一处玩家侧调用**：表只被拿去拼 EchoFlow 条目，
  * 于是「世界无穷大」在数据里成立、在游戏里根本摸不到。玩家看到的还是那八个区。
  *
  * ## 这一层怎么修
- * - **已审十二层**（`endless-sectors.json`）：逐字照表，`charted: true`。它们的三条动作各自
+ * - **已审层**（`endless-sectors.json`，现为 24 层）：逐字照表，`charted: true`。它们的三条动作各自
  *   对应一条**已在 EchoFlow 里登记**的旗标（`flag.endless.<depth>.<i>`）⇒ 按下去会进纪事页，
  *   是真实后果，不是弹一句话。
- * - **复沓层**（第 13 层起，`charted: false`）：由已审十二层**确定性重组**而成——
+ * - **复沓层**（已审层之后，`charted: false`）：由已审层**确定性重组**而成——
  *   六处可看各取自不同扇区、标题标出「复沓第 N 遭」、指路语与人物随深度轮转。
  *   同一深度逐字一致（不取随机数、不读时钟），因此**可复现、可测试、可审计**。
  * - **诚实边界**：复沓层的三条动作**不立旗标**（只在本次下行的手记里留一行）。理由不是偷懒：
@@ -20,8 +20,8 @@ import { endlessSectorsOf, type EndlessSector } from '@/quest/EndlessWorld'
  *   存档 + 无限个没有读者的名字。所以深处「不计里程」：回到地表，复沓重来——这句话在面板上明写。
  *
  * ## 与既有层的分工
- * 这里**不**读表外的任何东西、**不**写第二份扇区真值：`sectorAt()` 对第 ≤12 层原样返回表里的对象，
- * 只有 >12 层才派生。派生只 recombine 表里已有的文字，不臆造新设定（与 KI-723 同一条 canon 纪律）。
+ * 这里**不**读表外的任何东西、**不**写第二份扇区真值：`sectorAt()` 对已审层（`≤ chartedDepthCount()`）
+ * 原样返回表里的对象，更深层才派生。派生只 recombine 表里已有的文字，不臆造新设定（与 KI-723 同一条 canon 纪律）。
  * 玩家进程零 LLM、零联网。
  */
 
@@ -47,7 +47,7 @@ export interface DescendAction {
 
 export interface DescendFloor {
   depth: number
-  /** true = 已审十二层之一（动作会落旗标） */
+  /** true = 已审层之一（动作会落旗标） */
   charted: boolean
   /** 0 = 原文；≥1 = 第 N 遭复沓 */
   recurrence: number

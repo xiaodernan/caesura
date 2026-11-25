@@ -3,7 +3,7 @@
   "schema": 1,
   "seed": 723,
   "startDepth": 1,
-  "generatedCount": 12,
+  "generatedCount": 24,
   "sectors": [
     {
       "id": "sector:1",
@@ -1012,6 +1012,1014 @@
         }
       ],
       "nextDepth": 13
+    },
+    {
+      "id": "sector:13",
+      "depth": 13,
+      "seed": 723,
+      "titleZh": "门槛 · 第 13 扇区",
+      "titleEn": "the threshold · sector 13",
+      "soundZh": "风从门缝里过",
+      "soundEn": "wind through the narrow opening",
+      "guideZh": "先看门缝，再看手边的薄簿。",
+      "guideEn": "Look at the opening first, then the ledger in your hand.",
+      "personZh": "恩希尔",
+      "personEn": "Hersil",
+      "marks": [
+        {
+          "id": "mark:13:0",
+          "zh": "井台 · 不替它决定去向",
+          "en": "the well-head · not choose its destination"
+        },
+        {
+          "id": "mark:13:1",
+          "zh": "水壶 · 不追量干痕",
+          "en": "the kettle · not measure the dry mark"
+        },
+        {
+          "id": "mark:13:2",
+          "zh": "北崖 · 不叫醒林子",
+          "en": "the northern cliff · not wake the wood"
+        },
+        {
+          "id": "mark:13:3",
+          "zh": "门槛 · 不替它决定去向",
+          "en": "the threshold · not choose its destination"
+        },
+        {
+          "id": "mark:13:4",
+          "zh": "钟壳 · 不追量干痕",
+          "en": "the bell shell · not measure the dry mark"
+        },
+        {
+          "id": "mark:13:5",
+          "zh": "船边 · 不叫醒林子",
+          "en": "the boat-side · not wake the wood"
+        }
+      ],
+      "flags": [
+        {
+          "flag": "flag.endless.13.0",
+          "fromZh": "门槛还在原处",
+          "fromEn": "the threshold remains where it is",
+          "toZh": "恩希尔决定不替它决定去向",
+          "toEn": "Hersil chooses to not choose its destination",
+          "narrativeZh": "留下的东西仍留在原处；没有人替它多说一句。",
+          "narrativeEn": "what stayed remains where it is; nobody adds a word on its behalf.",
+          "atlasHookZh": "留下的东西仍留在原处",
+          "atlasHookEn": "what stayed remains where it is",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.13.1",
+          "fromZh": "门槛还在原处",
+          "fromEn": "the threshold remains where it is",
+          "toZh": "恩希尔决定让风自己进出",
+          "toEn": "Hersil chooses to let the wind pass on its own",
+          "narrativeZh": "门缝留到天亮；没有人替它多说一句。",
+          "narrativeEn": "the narrow opening lasts until dawn; nobody adds a word on its behalf.",
+          "atlasHookZh": "门缝留到天亮",
+          "atlasHookEn": "the narrow opening lasts until dawn",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.13.2",
+          "fromZh": "门槛还在原处",
+          "fromEn": "the threshold remains where it is",
+          "toZh": "恩希尔决定不追量干痕",
+          "toEn": "Hersil chooses to not measure the dry mark",
+          "narrativeZh": "潮水覆回船底；没有人替它多说一句。",
+          "narrativeEn": "the tide covers the hull mark again; nobody adds a word on its behalf.",
+          "atlasHookZh": "潮水覆回船底",
+          "atlasHookEn": "the tide covers the hull mark again",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        }
+      ],
+      "nextDepth": 14
+    },
+    {
+      "id": "sector:14",
+      "depth": 14,
+      "seed": 723,
+      "titleZh": "船边 · 第 14 扇区",
+      "titleEn": "the boat-side · sector 14",
+      "soundZh": "干痕随潮起落",
+      "soundEn": "the dry mark rises and falls with the tide",
+      "guideZh": "空座没有人坐；站一会儿就懂。",
+      "guideEn": "Nobody sits in the empty seat; stand a while and you will know.",
+      "personZh": "渡人",
+      "personEn": "the ferryman",
+      "marks": [
+        {
+          "id": "mark:14:0",
+          "zh": "水壶 · 让风自己进出",
+          "en": "the kettle · let the wind pass on its own"
+        },
+        {
+          "id": "mark:14:1",
+          "zh": "北崖 · 不催合上薄簿",
+          "en": "the northern cliff · not hurry the ledger shut"
+        },
+        {
+          "id": "mark:14:2",
+          "zh": "门槛 · 不把它记下来",
+          "en": "the threshold · leave it unrecorded"
+        },
+        {
+          "id": "mark:14:3",
+          "zh": "钟壳 · 让风自己进出",
+          "en": "the bell shell · let the wind pass on its own"
+        },
+        {
+          "id": "mark:14:4",
+          "zh": "船边 · 不催合上薄簿",
+          "en": "the boat-side · not hurry the ledger shut"
+        },
+        {
+          "id": "mark:14:5",
+          "zh": "摆旁 · 不把它记下来",
+          "en": "beside the pendulum · leave it unrecorded"
+        }
+      ],
+      "flags": [
+        {
+          "flag": "flag.endless.14.0",
+          "fromZh": "船边还在原处",
+          "fromEn": "the boat-side remains where it is",
+          "toZh": "渡人决定让风自己进出",
+          "toEn": "the ferryman chooses to let the wind pass on its own",
+          "narrativeZh": "门缝留到天亮；没有人替它多说一句。",
+          "narrativeEn": "the narrow opening lasts until dawn; nobody adds a word on its behalf.",
+          "atlasHookZh": "门缝留到天亮",
+          "atlasHookEn": "the narrow opening lasts until dawn",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.14.1",
+          "fromZh": "船边还在原处",
+          "fromEn": "the boat-side remains where it is",
+          "toZh": "渡人决定不追量干痕",
+          "toEn": "the ferryman chooses to not measure the dry mark",
+          "narrativeZh": "潮水覆回船底；没有人替它多说一句。",
+          "narrativeEn": "the tide covers the hull mark again; nobody adds a word on its behalf.",
+          "atlasHookZh": "潮水覆回船底",
+          "atlasHookEn": "the tide covers the hull mark again",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.14.2",
+          "fromZh": "船边还在原处",
+          "fromEn": "the boat-side remains where it is",
+          "toZh": "渡人决定不催合上薄簿",
+          "toEn": "the ferryman chooses to not hurry the ledger shut",
+          "narrativeZh": "页角自翻而无人补记；没有人替它多说一句。",
+          "narrativeEn": "the page turns without an added entry; nobody adds a word on its behalf.",
+          "atlasHookZh": "页角自翻而无人补记",
+          "atlasHookEn": "the page turns without an added entry",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        }
+      ],
+      "nextDepth": 15
+    },
+    {
+      "id": "sector:15",
+      "depth": 15,
+      "seed": 723,
+      "titleZh": "门槛 · 第 15 扇区",
+      "titleEn": "the threshold · sector 15",
+      "soundZh": "风从门缝里过",
+      "soundEn": "wind through the narrow opening",
+      "guideZh": "跟着声音走，不要跟着地图走。",
+      "guideEn": "Follow the sound, not the map.",
+      "personZh": "恩希尔",
+      "personEn": "Hersil",
+      "marks": [
+        {
+          "id": "mark:15:0",
+          "zh": "北崖 · 不追量干痕",
+          "en": "the northern cliff · not measure the dry mark"
+        },
+        {
+          "id": "mark:15:1",
+          "zh": "门槛 · 不叫醒林子",
+          "en": "the threshold · not wake the wood"
+        },
+        {
+          "id": "mark:15:2",
+          "zh": "钟壳 · 不替它决定去向",
+          "en": "the bell shell · not choose its destination"
+        },
+        {
+          "id": "mark:15:3",
+          "zh": "船边 · 不追量干痕",
+          "en": "the boat-side · not measure the dry mark"
+        },
+        {
+          "id": "mark:15:4",
+          "zh": "摆旁 · 不叫醒林子",
+          "en": "beside the pendulum · not wake the wood"
+        },
+        {
+          "id": "mark:15:5",
+          "zh": "薄簿 · 不替它决定去向",
+          "en": "the thin ledger · not choose its destination"
+        }
+      ],
+      "flags": [
+        {
+          "flag": "flag.endless.15.0",
+          "fromZh": "门槛还在原处",
+          "fromEn": "the threshold remains where it is",
+          "toZh": "恩希尔决定不追量干痕",
+          "toEn": "Hersil chooses to not measure the dry mark",
+          "narrativeZh": "潮水覆回船底；没有人替它多说一句。",
+          "narrativeEn": "the tide covers the hull mark again; nobody adds a word on its behalf.",
+          "atlasHookZh": "潮水覆回船底",
+          "atlasHookEn": "the tide covers the hull mark again",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.15.1",
+          "fromZh": "门槛还在原处",
+          "fromEn": "the threshold remains where it is",
+          "toZh": "恩希尔决定不催合上薄簿",
+          "toEn": "Hersil chooses to not hurry the ledger shut",
+          "narrativeZh": "页角自翻而无人补记；没有人替它多说一句。",
+          "narrativeEn": "the page turns without an added entry; nobody adds a word on its behalf.",
+          "atlasHookZh": "页角自翻而无人补记",
+          "atlasHookEn": "the page turns without an added entry",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.15.2",
+          "fromZh": "门槛还在原处",
+          "fromEn": "the threshold remains where it is",
+          "toZh": "恩希尔决定不叫醒林子",
+          "toEn": "Hersil chooses to not wake the wood",
+          "narrativeZh": "树只认你的心跳；没有人替它多说一句。",
+          "narrativeEn": "the trees know only your heartbeat; nobody adds a word on its behalf.",
+          "atlasHookZh": "树只认你的心跳",
+          "atlasHookEn": "the trees know only your heartbeat",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        }
+      ],
+      "nextDepth": 16
+    },
+    {
+      "id": "sector:16",
+      "depth": 16,
+      "seed": 723,
+      "titleZh": "薄簿 · 第 16 扇区",
+      "titleEn": "the thin ledger · sector 16",
+      "soundZh": "页角自己翻动",
+      "soundEn": "the corner turns on its own",
+      "guideZh": "空座没有人坐；站一会儿就懂。",
+      "guideEn": "Nobody sits in the empty seat; stand a while and you will know.",
+      "personZh": "麦格",
+      "personEn": "Meg",
+      "marks": [
+        {
+          "id": "mark:16:0",
+          "zh": "门槛 · 不催合上薄簿",
+          "en": "the threshold · not hurry the ledger shut"
+        },
+        {
+          "id": "mark:16:1",
+          "zh": "钟壳 · 不把它记下来",
+          "en": "the bell shell · leave it unrecorded"
+        },
+        {
+          "id": "mark:16:2",
+          "zh": "船边 · 让风自己进出",
+          "en": "the boat-side · let the wind pass on its own"
+        },
+        {
+          "id": "mark:16:3",
+          "zh": "摆旁 · 不催合上薄簿",
+          "en": "beside the pendulum · not hurry the ledger shut"
+        },
+        {
+          "id": "mark:16:4",
+          "zh": "薄簿 · 不把它记下来",
+          "en": "the thin ledger · leave it unrecorded"
+        },
+        {
+          "id": "mark:16:5",
+          "zh": "井台 · 让风自己进出",
+          "en": "the well-head · let the wind pass on its own"
+        }
+      ],
+      "flags": [
+        {
+          "flag": "flag.endless.16.0",
+          "fromZh": "薄簿还在原处",
+          "fromEn": "the thin ledger remains where it is",
+          "toZh": "麦格决定不催合上薄簿",
+          "toEn": "Meg chooses to not hurry the ledger shut",
+          "narrativeZh": "页角自翻而无人补记；没有人替它多说一句。",
+          "narrativeEn": "the page turns without an added entry; nobody adds a word on its behalf.",
+          "atlasHookZh": "页角自翻而无人补记",
+          "atlasHookEn": "the page turns without an added entry",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.16.1",
+          "fromZh": "薄簿还在原处",
+          "fromEn": "the thin ledger remains where it is",
+          "toZh": "麦格决定不叫醒林子",
+          "toEn": "Meg chooses to not wake the wood",
+          "narrativeZh": "树只认你的心跳；没有人替它多说一句。",
+          "narrativeEn": "the trees know only your heartbeat; nobody adds a word on its behalf.",
+          "atlasHookZh": "树只认你的心跳",
+          "atlasHookEn": "the trees know only your heartbeat",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.16.2",
+          "fromZh": "薄簿还在原处",
+          "fromEn": "the thin ledger remains where it is",
+          "toZh": "麦格决定不把它记下来",
+          "toEn": "Meg chooses to leave it unrecorded",
+          "narrativeZh": "记下的人决定不记；没有人替它多说一句。",
+          "narrativeEn": "the keeper decides not to keep; nobody adds a word on its behalf.",
+          "atlasHookZh": "记下的人决定不记",
+          "atlasHookEn": "the keeper decides not to keep",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        }
+      ],
+      "nextDepth": 17
+    },
+    {
+      "id": "sector:17",
+      "depth": 17,
+      "seed": 723,
+      "titleZh": "薄簿 · 第 17 扇区",
+      "titleEn": "the thin ledger · sector 17",
+      "soundZh": "页角自己翻动",
+      "soundEn": "the corner turns on its own",
+      "guideZh": "跟着声音走，不要跟着地图走。",
+      "guideEn": "Follow the sound, not the map.",
+      "personZh": "恩希尔",
+      "personEn": "Hersil",
+      "marks": [
+        {
+          "id": "mark:17:0",
+          "zh": "钟壳 · 不叫醒林子",
+          "en": "the bell shell · not wake the wood"
+        },
+        {
+          "id": "mark:17:1",
+          "zh": "船边 · 不替它决定去向",
+          "en": "the boat-side · not choose its destination"
+        },
+        {
+          "id": "mark:17:2",
+          "zh": "摆旁 · 不追量干痕",
+          "en": "beside the pendulum · not measure the dry mark"
+        },
+        {
+          "id": "mark:17:3",
+          "zh": "薄簿 · 不叫醒林子",
+          "en": "the thin ledger · not wake the wood"
+        },
+        {
+          "id": "mark:17:4",
+          "zh": "井台 · 不替它决定去向",
+          "en": "the well-head · not choose its destination"
+        },
+        {
+          "id": "mark:17:5",
+          "zh": "水壶 · 不追量干痕",
+          "en": "the kettle · not measure the dry mark"
+        }
+      ],
+      "flags": [
+        {
+          "flag": "flag.endless.17.0",
+          "fromZh": "薄簿还在原处",
+          "fromEn": "the thin ledger remains where it is",
+          "toZh": "恩希尔决定不叫醒林子",
+          "toEn": "Hersil chooses to not wake the wood",
+          "narrativeZh": "树只认你的心跳；没有人替它多说一句。",
+          "narrativeEn": "the trees know only your heartbeat; nobody adds a word on its behalf.",
+          "atlasHookZh": "树只认你的心跳",
+          "atlasHookEn": "the trees know only your heartbeat",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.17.1",
+          "fromZh": "薄簿还在原处",
+          "fromEn": "the thin ledger remains where it is",
+          "toZh": "恩希尔决定不把它记下来",
+          "toEn": "Hersil chooses to leave it unrecorded",
+          "narrativeZh": "记下的人决定不记；没有人替它多说一句。",
+          "narrativeEn": "the keeper decides not to keep; nobody adds a word on its behalf.",
+          "atlasHookZh": "记下的人决定不记",
+          "atlasHookEn": "the keeper decides not to keep",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.17.2",
+          "fromZh": "薄簿还在原处",
+          "fromEn": "the thin ledger remains where it is",
+          "toZh": "恩希尔决定不替它决定去向",
+          "toEn": "Hersil chooses to not choose its destination",
+          "narrativeZh": "留下的东西仍留在原处；没有人替它多说一句。",
+          "narrativeEn": "what stayed remains where it is; nobody adds a word on its behalf.",
+          "atlasHookZh": "留下的东西仍留在原处",
+          "atlasHookEn": "what stayed remains where it is",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        }
+      ],
+      "nextDepth": 18
+    },
+    {
+      "id": "sector:18",
+      "depth": 18,
+      "seed": 723,
+      "titleZh": "北崖 · 第 18 扇区",
+      "titleEn": "the northern cliff · sector 18",
+      "soundZh": "一根弦自己找音",
+      "soundEn": "a string finds its own pitch",
+      "guideZh": "空座没有人坐；站一会儿就懂。",
+      "guideEn": "Nobody sits in the empty seat; stand a while and you will know.",
+      "personZh": "恩希尔",
+      "personEn": "Hersil",
+      "marks": [
+        {
+          "id": "mark:18:0",
+          "zh": "船边 · 不把它记下来",
+          "en": "the boat-side · leave it unrecorded"
+        },
+        {
+          "id": "mark:18:1",
+          "zh": "摆旁 · 让风自己进出",
+          "en": "beside the pendulum · let the wind pass on its own"
+        },
+        {
+          "id": "mark:18:2",
+          "zh": "薄簿 · 不催合上薄簿",
+          "en": "the thin ledger · not hurry the ledger shut"
+        },
+        {
+          "id": "mark:18:3",
+          "zh": "井台 · 不把它记下来",
+          "en": "the well-head · leave it unrecorded"
+        },
+        {
+          "id": "mark:18:4",
+          "zh": "水壶 · 让风自己进出",
+          "en": "the kettle · let the wind pass on its own"
+        },
+        {
+          "id": "mark:18:5",
+          "zh": "北崖 · 不催合上薄簿",
+          "en": "the northern cliff · not hurry the ledger shut"
+        }
+      ],
+      "flags": [
+        {
+          "flag": "flag.endless.18.0",
+          "fromZh": "北崖还在原处",
+          "fromEn": "the northern cliff remains where it is",
+          "toZh": "恩希尔决定不把它记下来",
+          "toEn": "Hersil chooses to leave it unrecorded",
+          "narrativeZh": "记下的人决定不记；没有人替它多说一句。",
+          "narrativeEn": "the keeper decides not to keep; nobody adds a word on its behalf.",
+          "atlasHookZh": "记下的人决定不记",
+          "atlasHookEn": "the keeper decides not to keep",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.18.1",
+          "fromZh": "北崖还在原处",
+          "fromEn": "the northern cliff remains where it is",
+          "toZh": "恩希尔决定不替它决定去向",
+          "toEn": "Hersil chooses to not choose its destination",
+          "narrativeZh": "留下的东西仍留在原处；没有人替它多说一句。",
+          "narrativeEn": "what stayed remains where it is; nobody adds a word on its behalf.",
+          "atlasHookZh": "留下的东西仍留在原处",
+          "atlasHookEn": "what stayed remains where it is",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.18.2",
+          "fromZh": "北崖还在原处",
+          "fromEn": "the northern cliff remains where it is",
+          "toZh": "恩希尔决定让风自己进出",
+          "toEn": "Hersil chooses to let the wind pass on its own",
+          "narrativeZh": "门缝留到天亮；没有人替它多说一句。",
+          "narrativeEn": "the narrow opening lasts until dawn; nobody adds a word on its behalf.",
+          "atlasHookZh": "门缝留到天亮",
+          "atlasHookEn": "the narrow opening lasts until dawn",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        }
+      ],
+      "nextDepth": 19
+    },
+    {
+      "id": "sector:19",
+      "depth": 19,
+      "seed": 723,
+      "titleZh": "水壶 · 第 19 扇区",
+      "titleEn": "the kettle · sector 19",
+      "soundZh": "壶底留一圈浅痕",
+      "soundEn": "a pale ring remains under the kettle",
+      "guideZh": "跟着声音走，不要跟着地图走。",
+      "guideEn": "Follow the sound, not the map.",
+      "personZh": "阿汐",
+      "personEn": "Axi",
+      "marks": [
+        {
+          "id": "mark:19:0",
+          "zh": "摆旁 · 不替它决定去向",
+          "en": "beside the pendulum · not choose its destination"
+        },
+        {
+          "id": "mark:19:1",
+          "zh": "薄簿 · 不追量干痕",
+          "en": "the thin ledger · not measure the dry mark"
+        },
+        {
+          "id": "mark:19:2",
+          "zh": "井台 · 不叫醒林子",
+          "en": "the well-head · not wake the wood"
+        },
+        {
+          "id": "mark:19:3",
+          "zh": "水壶 · 不替它决定去向",
+          "en": "the kettle · not choose its destination"
+        },
+        {
+          "id": "mark:19:4",
+          "zh": "北崖 · 不追量干痕",
+          "en": "the northern cliff · not measure the dry mark"
+        },
+        {
+          "id": "mark:19:5",
+          "zh": "门槛 · 不叫醒林子",
+          "en": "the threshold · not wake the wood"
+        }
+      ],
+      "flags": [
+        {
+          "flag": "flag.endless.19.0",
+          "fromZh": "水壶还在原处",
+          "fromEn": "the kettle remains where it is",
+          "toZh": "阿汐决定不替它决定去向",
+          "toEn": "Axi chooses to not choose its destination",
+          "narrativeZh": "留下的东西仍留在原处；没有人替它多说一句。",
+          "narrativeEn": "what stayed remains where it is; nobody adds a word on its behalf.",
+          "atlasHookZh": "留下的东西仍留在原处",
+          "atlasHookEn": "what stayed remains where it is",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.19.1",
+          "fromZh": "水壶还在原处",
+          "fromEn": "the kettle remains where it is",
+          "toZh": "阿汐决定让风自己进出",
+          "toEn": "Axi chooses to let the wind pass on its own",
+          "narrativeZh": "门缝留到天亮；没有人替它多说一句。",
+          "narrativeEn": "the narrow opening lasts until dawn; nobody adds a word on its behalf.",
+          "atlasHookZh": "门缝留到天亮",
+          "atlasHookEn": "the narrow opening lasts until dawn",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.19.2",
+          "fromZh": "水壶还在原处",
+          "fromEn": "the kettle remains where it is",
+          "toZh": "阿汐决定不追量干痕",
+          "toEn": "Axi chooses to not measure the dry mark",
+          "narrativeZh": "潮水覆回船底；没有人替它多说一句。",
+          "narrativeEn": "the tide covers the hull mark again; nobody adds a word on its behalf.",
+          "atlasHookZh": "潮水覆回船底",
+          "atlasHookEn": "the tide covers the hull mark again",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        }
+      ],
+      "nextDepth": 20
+    },
+    {
+      "id": "sector:20",
+      "depth": 20,
+      "seed": 723,
+      "titleZh": "水壶 · 第 20 扇区",
+      "titleEn": "the kettle · sector 20",
+      "soundZh": "壶底留一圈浅痕",
+      "soundEn": "a pale ring remains under the kettle",
+      "guideZh": "先看门缝，再看手边的薄簿。",
+      "guideEn": "Look at the opening first, then the ledger in your hand.",
+      "personZh": "渡人",
+      "personEn": "the ferryman",
+      "marks": [
+        {
+          "id": "mark:20:0",
+          "zh": "薄簿 · 让风自己进出",
+          "en": "the thin ledger · let the wind pass on its own"
+        },
+        {
+          "id": "mark:20:1",
+          "zh": "井台 · 不催合上薄簿",
+          "en": "the well-head · not hurry the ledger shut"
+        },
+        {
+          "id": "mark:20:2",
+          "zh": "水壶 · 不把它记下来",
+          "en": "the kettle · leave it unrecorded"
+        },
+        {
+          "id": "mark:20:3",
+          "zh": "北崖 · 让风自己进出",
+          "en": "the northern cliff · let the wind pass on its own"
+        },
+        {
+          "id": "mark:20:4",
+          "zh": "门槛 · 不催合上薄簿",
+          "en": "the threshold · not hurry the ledger shut"
+        },
+        {
+          "id": "mark:20:5",
+          "zh": "钟壳 · 不把它记下来",
+          "en": "the bell shell · leave it unrecorded"
+        }
+      ],
+      "flags": [
+        {
+          "flag": "flag.endless.20.0",
+          "fromZh": "水壶还在原处",
+          "fromEn": "the kettle remains where it is",
+          "toZh": "渡人决定让风自己进出",
+          "toEn": "the ferryman chooses to let the wind pass on its own",
+          "narrativeZh": "门缝留到天亮；没有人替它多说一句。",
+          "narrativeEn": "the narrow opening lasts until dawn; nobody adds a word on its behalf.",
+          "atlasHookZh": "门缝留到天亮",
+          "atlasHookEn": "the narrow opening lasts until dawn",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.20.1",
+          "fromZh": "水壶还在原处",
+          "fromEn": "the kettle remains where it is",
+          "toZh": "渡人决定不追量干痕",
+          "toEn": "the ferryman chooses to not measure the dry mark",
+          "narrativeZh": "潮水覆回船底；没有人替它多说一句。",
+          "narrativeEn": "the tide covers the hull mark again; nobody adds a word on its behalf.",
+          "atlasHookZh": "潮水覆回船底",
+          "atlasHookEn": "the tide covers the hull mark again",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.20.2",
+          "fromZh": "水壶还在原处",
+          "fromEn": "the kettle remains where it is",
+          "toZh": "渡人决定不催合上薄簿",
+          "toEn": "the ferryman chooses to not hurry the ledger shut",
+          "narrativeZh": "页角自翻而无人补记；没有人替它多说一句。",
+          "narrativeEn": "the page turns without an added entry; nobody adds a word on its behalf.",
+          "atlasHookZh": "页角自翻而无人补记",
+          "atlasHookEn": "the page turns without an added entry",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        }
+      ],
+      "nextDepth": 21
+    },
+    {
+      "id": "sector:21",
+      "depth": 21,
+      "seed": 723,
+      "titleZh": "薄簿 · 第 21 扇区",
+      "titleEn": "the thin ledger · sector 21",
+      "soundZh": "页角自己翻动",
+      "soundEn": "the corner turns on its own",
+      "guideZh": "潮退时再回来，干痕会指路。",
+      "guideEn": "Come back at ebb; the dry mark will show the way.",
+      "personZh": "渡人",
+      "personEn": "the ferryman",
+      "marks": [
+        {
+          "id": "mark:21:0",
+          "zh": "井台 · 不追量干痕",
+          "en": "the well-head · not measure the dry mark"
+        },
+        {
+          "id": "mark:21:1",
+          "zh": "水壶 · 不叫醒林子",
+          "en": "the kettle · not wake the wood"
+        },
+        {
+          "id": "mark:21:2",
+          "zh": "北崖 · 不替它决定去向",
+          "en": "the northern cliff · not choose its destination"
+        },
+        {
+          "id": "mark:21:3",
+          "zh": "门槛 · 不追量干痕",
+          "en": "the threshold · not measure the dry mark"
+        },
+        {
+          "id": "mark:21:4",
+          "zh": "钟壳 · 不叫醒林子",
+          "en": "the bell shell · not wake the wood"
+        },
+        {
+          "id": "mark:21:5",
+          "zh": "船边 · 不替它决定去向",
+          "en": "the boat-side · not choose its destination"
+        }
+      ],
+      "flags": [
+        {
+          "flag": "flag.endless.21.0",
+          "fromZh": "薄簿还在原处",
+          "fromEn": "the thin ledger remains where it is",
+          "toZh": "渡人决定不追量干痕",
+          "toEn": "the ferryman chooses to not measure the dry mark",
+          "narrativeZh": "潮水覆回船底；没有人替它多说一句。",
+          "narrativeEn": "the tide covers the hull mark again; nobody adds a word on its behalf.",
+          "atlasHookZh": "潮水覆回船底",
+          "atlasHookEn": "the tide covers the hull mark again",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.21.1",
+          "fromZh": "薄簿还在原处",
+          "fromEn": "the thin ledger remains where it is",
+          "toZh": "渡人决定不催合上薄簿",
+          "toEn": "the ferryman chooses to not hurry the ledger shut",
+          "narrativeZh": "页角自翻而无人补记；没有人替它多说一句。",
+          "narrativeEn": "the page turns without an added entry; nobody adds a word on its behalf.",
+          "atlasHookZh": "页角自翻而无人补记",
+          "atlasHookEn": "the page turns without an added entry",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.21.2",
+          "fromZh": "薄簿还在原处",
+          "fromEn": "the thin ledger remains where it is",
+          "toZh": "渡人决定不叫醒林子",
+          "toEn": "the ferryman chooses to not wake the wood",
+          "narrativeZh": "树只认你的心跳；没有人替它多说一句。",
+          "narrativeEn": "the trees know only your heartbeat; nobody adds a word on its behalf.",
+          "atlasHookZh": "树只认你的心跳",
+          "atlasHookEn": "the trees know only your heartbeat",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        }
+      ],
+      "nextDepth": 22
+    },
+    {
+      "id": "sector:22",
+      "depth": 22,
+      "seed": 723,
+      "titleZh": "摆旁 · 第 22 扇区",
+      "titleEn": "beside the pendulum · sector 22",
+      "soundZh": "空座仍在等人",
+      "soundEn": "the empty seat still waits",
+      "guideZh": "空座没有人坐；站一会儿就懂。",
+      "guideEn": "Nobody sits in the empty seat; stand a while and you will know.",
+      "personZh": "恩希尔",
+      "personEn": "Hersil",
+      "marks": [
+        {
+          "id": "mark:22:0",
+          "zh": "水壶 · 不催合上薄簿",
+          "en": "the kettle · not hurry the ledger shut"
+        },
+        {
+          "id": "mark:22:1",
+          "zh": "北崖 · 不把它记下来",
+          "en": "the northern cliff · leave it unrecorded"
+        },
+        {
+          "id": "mark:22:2",
+          "zh": "门槛 · 让风自己进出",
+          "en": "the threshold · let the wind pass on its own"
+        },
+        {
+          "id": "mark:22:3",
+          "zh": "钟壳 · 不催合上薄簿",
+          "en": "the bell shell · not hurry the ledger shut"
+        },
+        {
+          "id": "mark:22:4",
+          "zh": "船边 · 不把它记下来",
+          "en": "the boat-side · leave it unrecorded"
+        },
+        {
+          "id": "mark:22:5",
+          "zh": "摆旁 · 让风自己进出",
+          "en": "beside the pendulum · let the wind pass on its own"
+        }
+      ],
+      "flags": [
+        {
+          "flag": "flag.endless.22.0",
+          "fromZh": "摆旁还在原处",
+          "fromEn": "beside the pendulum remains where it is",
+          "toZh": "恩希尔决定不催合上薄簿",
+          "toEn": "Hersil chooses to not hurry the ledger shut",
+          "narrativeZh": "页角自翻而无人补记；没有人替它多说一句。",
+          "narrativeEn": "the page turns without an added entry; nobody adds a word on its behalf.",
+          "atlasHookZh": "页角自翻而无人补记",
+          "atlasHookEn": "the page turns without an added entry",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.22.1",
+          "fromZh": "摆旁还在原处",
+          "fromEn": "beside the pendulum remains where it is",
+          "toZh": "恩希尔决定不叫醒林子",
+          "toEn": "Hersil chooses to not wake the wood",
+          "narrativeZh": "树只认你的心跳；没有人替它多说一句。",
+          "narrativeEn": "the trees know only your heartbeat; nobody adds a word on its behalf.",
+          "atlasHookZh": "树只认你的心跳",
+          "atlasHookEn": "the trees know only your heartbeat",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.22.2",
+          "fromZh": "摆旁还在原处",
+          "fromEn": "beside the pendulum remains where it is",
+          "toZh": "恩希尔决定不把它记下来",
+          "toEn": "Hersil chooses to leave it unrecorded",
+          "narrativeZh": "记下的人决定不记；没有人替它多说一句。",
+          "narrativeEn": "the keeper decides not to keep; nobody adds a word on its behalf.",
+          "atlasHookZh": "记下的人决定不记",
+          "atlasHookEn": "the keeper decides not to keep",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        }
+      ],
+      "nextDepth": 23
+    },
+    {
+      "id": "sector:23",
+      "depth": 23,
+      "seed": 723,
+      "titleZh": "摆旁 · 第 23 扇区",
+      "titleEn": "beside the pendulum · sector 23",
+      "soundZh": "空座仍在等人",
+      "soundEn": "the empty seat still waits",
+      "guideZh": "跟着声音走，不要跟着地图走。",
+      "guideEn": "Follow the sound, not the map.",
+      "personZh": "阿汐",
+      "personEn": "Axi",
+      "marks": [
+        {
+          "id": "mark:23:0",
+          "zh": "北崖 · 不叫醒林子",
+          "en": "the northern cliff · not wake the wood"
+        },
+        {
+          "id": "mark:23:1",
+          "zh": "门槛 · 不替它决定去向",
+          "en": "the threshold · not choose its destination"
+        },
+        {
+          "id": "mark:23:2",
+          "zh": "钟壳 · 不追量干痕",
+          "en": "the bell shell · not measure the dry mark"
+        },
+        {
+          "id": "mark:23:3",
+          "zh": "船边 · 不叫醒林子",
+          "en": "the boat-side · not wake the wood"
+        },
+        {
+          "id": "mark:23:4",
+          "zh": "摆旁 · 不替它决定去向",
+          "en": "beside the pendulum · not choose its destination"
+        },
+        {
+          "id": "mark:23:5",
+          "zh": "薄簿 · 不追量干痕",
+          "en": "the thin ledger · not measure the dry mark"
+        }
+      ],
+      "flags": [
+        {
+          "flag": "flag.endless.23.0",
+          "fromZh": "摆旁还在原处",
+          "fromEn": "beside the pendulum remains where it is",
+          "toZh": "阿汐决定不叫醒林子",
+          "toEn": "Axi chooses to not wake the wood",
+          "narrativeZh": "树只认你的心跳；没有人替它多说一句。",
+          "narrativeEn": "the trees know only your heartbeat; nobody adds a word on its behalf.",
+          "atlasHookZh": "树只认你的心跳",
+          "atlasHookEn": "the trees know only your heartbeat",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.23.1",
+          "fromZh": "摆旁还在原处",
+          "fromEn": "beside the pendulum remains where it is",
+          "toZh": "阿汐决定不把它记下来",
+          "toEn": "Axi chooses to leave it unrecorded",
+          "narrativeZh": "记下的人决定不记；没有人替它多说一句。",
+          "narrativeEn": "the keeper decides not to keep; nobody adds a word on its behalf.",
+          "atlasHookZh": "记下的人决定不记",
+          "atlasHookEn": "the keeper decides not to keep",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.23.2",
+          "fromZh": "摆旁还在原处",
+          "fromEn": "beside the pendulum remains where it is",
+          "toZh": "阿汐决定不替它决定去向",
+          "toEn": "Axi chooses to not choose its destination",
+          "narrativeZh": "留下的东西仍留在原处；没有人替它多说一句。",
+          "narrativeEn": "what stayed remains where it is; nobody adds a word on its behalf.",
+          "atlasHookZh": "留下的东西仍留在原处",
+          "atlasHookEn": "what stayed remains where it is",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        }
+      ],
+      "nextDepth": 24
+    },
+    {
+      "id": "sector:24",
+      "depth": 24,
+      "seed": 723,
+      "titleZh": "钟壳 · 第 24 扇区",
+      "titleEn": "the bell shell · sector 24",
+      "soundZh": "铜面自己发冷",
+      "soundEn": "the bronze cools by itself",
+      "guideZh": "先看门缝，再看手边的薄簿。",
+      "guideEn": "Look at the opening first, then the ledger in your hand.",
+      "personZh": "阿汐",
+      "personEn": "Axi",
+      "marks": [
+        {
+          "id": "mark:24:0",
+          "zh": "门槛 · 不把它记下来",
+          "en": "the threshold · leave it unrecorded"
+        },
+        {
+          "id": "mark:24:1",
+          "zh": "钟壳 · 让风自己进出",
+          "en": "the bell shell · let the wind pass on its own"
+        },
+        {
+          "id": "mark:24:2",
+          "zh": "船边 · 不催合上薄簿",
+          "en": "the boat-side · not hurry the ledger shut"
+        },
+        {
+          "id": "mark:24:3",
+          "zh": "摆旁 · 不把它记下来",
+          "en": "beside the pendulum · leave it unrecorded"
+        },
+        {
+          "id": "mark:24:4",
+          "zh": "薄簿 · 让风自己进出",
+          "en": "the thin ledger · let the wind pass on its own"
+        },
+        {
+          "id": "mark:24:5",
+          "zh": "井台 · 不催合上薄簿",
+          "en": "the well-head · not hurry the ledger shut"
+        }
+      ],
+      "flags": [
+        {
+          "flag": "flag.endless.24.0",
+          "fromZh": "钟壳还在原处",
+          "fromEn": "the bell shell remains where it is",
+          "toZh": "阿汐决定不把它记下来",
+          "toEn": "Axi chooses to leave it unrecorded",
+          "narrativeZh": "记下的人决定不记；没有人替它多说一句。",
+          "narrativeEn": "the keeper decides not to keep; nobody adds a word on its behalf.",
+          "atlasHookZh": "记下的人决定不记",
+          "atlasHookEn": "the keeper decides not to keep",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.24.1",
+          "fromZh": "钟壳还在原处",
+          "fromEn": "the bell shell remains where it is",
+          "toZh": "阿汐决定不替它决定去向",
+          "toEn": "Axi chooses to not choose its destination",
+          "narrativeZh": "留下的东西仍留在原处；没有人替它多说一句。",
+          "narrativeEn": "what stayed remains where it is; nobody adds a word on its behalf.",
+          "atlasHookZh": "留下的东西仍留在原处",
+          "atlasHookEn": "what stayed remains where it is",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        },
+        {
+          "flag": "flag.endless.24.2",
+          "fromZh": "钟壳还在原处",
+          "fromEn": "the bell shell remains where it is",
+          "toZh": "阿汐决定让风自己进出",
+          "toEn": "Axi chooses to let the wind pass on its own",
+          "narrativeZh": "门缝留到天亮；没有人替它多说一句。",
+          "narrativeEn": "the narrow opening lasts until dawn; nobody adds a word on its behalf.",
+          "atlasHookZh": "门缝留到天亮",
+          "atlasHookEn": "the narrow opening lasts until dawn",
+          "canonEvidence": "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+        }
+      ],
+      "nextDepth": 25
     }
   ],
   "entries": [
@@ -2274,6 +3282,1266 @@
         "qaDigest": "audited-generator:KI-723"
       },
       "depth": 12
+    },
+    {
+      "id": "ef_endless_13_0",
+      "flag": "flag.endless.13.0",
+      "chapter": 1013,
+      "fromZh": "门槛还在原处",
+      "fromEn": "the threshold remains where it is",
+      "toZh": "恩希尔决定不替它决定去向",
+      "toEn": "Hersil chooses to not choose its destination",
+      "narrativeZh": "留下的东西仍留在原处；没有人替它多说一句。",
+      "narrativeEn": "what stayed remains where it is; nobody adds a word on its behalf.",
+      "npcReactionZh": "留下的东西仍留在原处；没有人替它多说一句。",
+      "npcReactionEn": "what stayed remains where it is; nobody adds a word on its behalf.",
+      "atlasHookZh": "留下的东西仍留在原处",
+      "atlasHookEn": "what stayed remains where it is",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 13
+    },
+    {
+      "id": "ef_endless_13_1",
+      "flag": "flag.endless.13.1",
+      "chapter": 1013,
+      "fromZh": "门槛还在原处",
+      "fromEn": "the threshold remains where it is",
+      "toZh": "恩希尔决定让风自己进出",
+      "toEn": "Hersil chooses to let the wind pass on its own",
+      "narrativeZh": "门缝留到天亮；没有人替它多说一句。",
+      "narrativeEn": "the narrow opening lasts until dawn; nobody adds a word on its behalf.",
+      "npcReactionZh": "门缝留到天亮；没有人替它多说一句。",
+      "npcReactionEn": "the narrow opening lasts until dawn; nobody adds a word on its behalf.",
+      "atlasHookZh": "门缝留到天亮",
+      "atlasHookEn": "the narrow opening lasts until dawn",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 13
+    },
+    {
+      "id": "ef_endless_13_2",
+      "flag": "flag.endless.13.2",
+      "chapter": 1013,
+      "fromZh": "门槛还在原处",
+      "fromEn": "the threshold remains where it is",
+      "toZh": "恩希尔决定不追量干痕",
+      "toEn": "Hersil chooses to not measure the dry mark",
+      "narrativeZh": "潮水覆回船底；没有人替它多说一句。",
+      "narrativeEn": "the tide covers the hull mark again; nobody adds a word on its behalf.",
+      "npcReactionZh": "潮水覆回船底；没有人替它多说一句。",
+      "npcReactionEn": "the tide covers the hull mark again; nobody adds a word on its behalf.",
+      "atlasHookZh": "潮水覆回船底",
+      "atlasHookEn": "the tide covers the hull mark again",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 13
+    },
+    {
+      "id": "ef_endless_14_0",
+      "flag": "flag.endless.14.0",
+      "chapter": 1014,
+      "fromZh": "船边还在原处",
+      "fromEn": "the boat-side remains where it is",
+      "toZh": "渡人决定让风自己进出",
+      "toEn": "the ferryman chooses to let the wind pass on its own",
+      "narrativeZh": "门缝留到天亮；没有人替它多说一句。",
+      "narrativeEn": "the narrow opening lasts until dawn; nobody adds a word on its behalf.",
+      "npcReactionZh": "门缝留到天亮；没有人替它多说一句。",
+      "npcReactionEn": "the narrow opening lasts until dawn; nobody adds a word on its behalf.",
+      "atlasHookZh": "门缝留到天亮",
+      "atlasHookEn": "the narrow opening lasts until dawn",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 14
+    },
+    {
+      "id": "ef_endless_14_1",
+      "flag": "flag.endless.14.1",
+      "chapter": 1014,
+      "fromZh": "船边还在原处",
+      "fromEn": "the boat-side remains where it is",
+      "toZh": "渡人决定不追量干痕",
+      "toEn": "the ferryman chooses to not measure the dry mark",
+      "narrativeZh": "潮水覆回船底；没有人替它多说一句。",
+      "narrativeEn": "the tide covers the hull mark again; nobody adds a word on its behalf.",
+      "npcReactionZh": "潮水覆回船底；没有人替它多说一句。",
+      "npcReactionEn": "the tide covers the hull mark again; nobody adds a word on its behalf.",
+      "atlasHookZh": "潮水覆回船底",
+      "atlasHookEn": "the tide covers the hull mark again",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 14
+    },
+    {
+      "id": "ef_endless_14_2",
+      "flag": "flag.endless.14.2",
+      "chapter": 1014,
+      "fromZh": "船边还在原处",
+      "fromEn": "the boat-side remains where it is",
+      "toZh": "渡人决定不催合上薄簿",
+      "toEn": "the ferryman chooses to not hurry the ledger shut",
+      "narrativeZh": "页角自翻而无人补记；没有人替它多说一句。",
+      "narrativeEn": "the page turns without an added entry; nobody adds a word on its behalf.",
+      "npcReactionZh": "页角自翻而无人补记；没有人替它多说一句。",
+      "npcReactionEn": "the page turns without an added entry; nobody adds a word on its behalf.",
+      "atlasHookZh": "页角自翻而无人补记",
+      "atlasHookEn": "the page turns without an added entry",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 14
+    },
+    {
+      "id": "ef_endless_15_0",
+      "flag": "flag.endless.15.0",
+      "chapter": 1015,
+      "fromZh": "门槛还在原处",
+      "fromEn": "the threshold remains where it is",
+      "toZh": "恩希尔决定不追量干痕",
+      "toEn": "Hersil chooses to not measure the dry mark",
+      "narrativeZh": "潮水覆回船底；没有人替它多说一句。",
+      "narrativeEn": "the tide covers the hull mark again; nobody adds a word on its behalf.",
+      "npcReactionZh": "潮水覆回船底；没有人替它多说一句。",
+      "npcReactionEn": "the tide covers the hull mark again; nobody adds a word on its behalf.",
+      "atlasHookZh": "潮水覆回船底",
+      "atlasHookEn": "the tide covers the hull mark again",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 15
+    },
+    {
+      "id": "ef_endless_15_1",
+      "flag": "flag.endless.15.1",
+      "chapter": 1015,
+      "fromZh": "门槛还在原处",
+      "fromEn": "the threshold remains where it is",
+      "toZh": "恩希尔决定不催合上薄簿",
+      "toEn": "Hersil chooses to not hurry the ledger shut",
+      "narrativeZh": "页角自翻而无人补记；没有人替它多说一句。",
+      "narrativeEn": "the page turns without an added entry; nobody adds a word on its behalf.",
+      "npcReactionZh": "页角自翻而无人补记；没有人替它多说一句。",
+      "npcReactionEn": "the page turns without an added entry; nobody adds a word on its behalf.",
+      "atlasHookZh": "页角自翻而无人补记",
+      "atlasHookEn": "the page turns without an added entry",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 15
+    },
+    {
+      "id": "ef_endless_15_2",
+      "flag": "flag.endless.15.2",
+      "chapter": 1015,
+      "fromZh": "门槛还在原处",
+      "fromEn": "the threshold remains where it is",
+      "toZh": "恩希尔决定不叫醒林子",
+      "toEn": "Hersil chooses to not wake the wood",
+      "narrativeZh": "树只认你的心跳；没有人替它多说一句。",
+      "narrativeEn": "the trees know only your heartbeat; nobody adds a word on its behalf.",
+      "npcReactionZh": "树只认你的心跳；没有人替它多说一句。",
+      "npcReactionEn": "the trees know only your heartbeat; nobody adds a word on its behalf.",
+      "atlasHookZh": "树只认你的心跳",
+      "atlasHookEn": "the trees know only your heartbeat",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 15
+    },
+    {
+      "id": "ef_endless_16_0",
+      "flag": "flag.endless.16.0",
+      "chapter": 1016,
+      "fromZh": "薄簿还在原处",
+      "fromEn": "the thin ledger remains where it is",
+      "toZh": "麦格决定不催合上薄簿",
+      "toEn": "Meg chooses to not hurry the ledger shut",
+      "narrativeZh": "页角自翻而无人补记；没有人替它多说一句。",
+      "narrativeEn": "the page turns without an added entry; nobody adds a word on its behalf.",
+      "npcReactionZh": "页角自翻而无人补记；没有人替它多说一句。",
+      "npcReactionEn": "the page turns without an added entry; nobody adds a word on its behalf.",
+      "atlasHookZh": "页角自翻而无人补记",
+      "atlasHookEn": "the page turns without an added entry",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 16
+    },
+    {
+      "id": "ef_endless_16_1",
+      "flag": "flag.endless.16.1",
+      "chapter": 1016,
+      "fromZh": "薄簿还在原处",
+      "fromEn": "the thin ledger remains where it is",
+      "toZh": "麦格决定不叫醒林子",
+      "toEn": "Meg chooses to not wake the wood",
+      "narrativeZh": "树只认你的心跳；没有人替它多说一句。",
+      "narrativeEn": "the trees know only your heartbeat; nobody adds a word on its behalf.",
+      "npcReactionZh": "树只认你的心跳；没有人替它多说一句。",
+      "npcReactionEn": "the trees know only your heartbeat; nobody adds a word on its behalf.",
+      "atlasHookZh": "树只认你的心跳",
+      "atlasHookEn": "the trees know only your heartbeat",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 16
+    },
+    {
+      "id": "ef_endless_16_2",
+      "flag": "flag.endless.16.2",
+      "chapter": 1016,
+      "fromZh": "薄簿还在原处",
+      "fromEn": "the thin ledger remains where it is",
+      "toZh": "麦格决定不把它记下来",
+      "toEn": "Meg chooses to leave it unrecorded",
+      "narrativeZh": "记下的人决定不记；没有人替它多说一句。",
+      "narrativeEn": "the keeper decides not to keep; nobody adds a word on its behalf.",
+      "npcReactionZh": "记下的人决定不记；没有人替它多说一句。",
+      "npcReactionEn": "the keeper decides not to keep; nobody adds a word on its behalf.",
+      "atlasHookZh": "记下的人决定不记",
+      "atlasHookEn": "the keeper decides not to keep",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 16
+    },
+    {
+      "id": "ef_endless_17_0",
+      "flag": "flag.endless.17.0",
+      "chapter": 1017,
+      "fromZh": "薄簿还在原处",
+      "fromEn": "the thin ledger remains where it is",
+      "toZh": "恩希尔决定不叫醒林子",
+      "toEn": "Hersil chooses to not wake the wood",
+      "narrativeZh": "树只认你的心跳；没有人替它多说一句。",
+      "narrativeEn": "the trees know only your heartbeat; nobody adds a word on its behalf.",
+      "npcReactionZh": "树只认你的心跳；没有人替它多说一句。",
+      "npcReactionEn": "the trees know only your heartbeat; nobody adds a word on its behalf.",
+      "atlasHookZh": "树只认你的心跳",
+      "atlasHookEn": "the trees know only your heartbeat",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 17
+    },
+    {
+      "id": "ef_endless_17_1",
+      "flag": "flag.endless.17.1",
+      "chapter": 1017,
+      "fromZh": "薄簿还在原处",
+      "fromEn": "the thin ledger remains where it is",
+      "toZh": "恩希尔决定不把它记下来",
+      "toEn": "Hersil chooses to leave it unrecorded",
+      "narrativeZh": "记下的人决定不记；没有人替它多说一句。",
+      "narrativeEn": "the keeper decides not to keep; nobody adds a word on its behalf.",
+      "npcReactionZh": "记下的人决定不记；没有人替它多说一句。",
+      "npcReactionEn": "the keeper decides not to keep; nobody adds a word on its behalf.",
+      "atlasHookZh": "记下的人决定不记",
+      "atlasHookEn": "the keeper decides not to keep",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 17
+    },
+    {
+      "id": "ef_endless_17_2",
+      "flag": "flag.endless.17.2",
+      "chapter": 1017,
+      "fromZh": "薄簿还在原处",
+      "fromEn": "the thin ledger remains where it is",
+      "toZh": "恩希尔决定不替它决定去向",
+      "toEn": "Hersil chooses to not choose its destination",
+      "narrativeZh": "留下的东西仍留在原处；没有人替它多说一句。",
+      "narrativeEn": "what stayed remains where it is; nobody adds a word on its behalf.",
+      "npcReactionZh": "留下的东西仍留在原处；没有人替它多说一句。",
+      "npcReactionEn": "what stayed remains where it is; nobody adds a word on its behalf.",
+      "atlasHookZh": "留下的东西仍留在原处",
+      "atlasHookEn": "what stayed remains where it is",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 17
+    },
+    {
+      "id": "ef_endless_18_0",
+      "flag": "flag.endless.18.0",
+      "chapter": 1018,
+      "fromZh": "北崖还在原处",
+      "fromEn": "the northern cliff remains where it is",
+      "toZh": "恩希尔决定不把它记下来",
+      "toEn": "Hersil chooses to leave it unrecorded",
+      "narrativeZh": "记下的人决定不记；没有人替它多说一句。",
+      "narrativeEn": "the keeper decides not to keep; nobody adds a word on its behalf.",
+      "npcReactionZh": "记下的人决定不记；没有人替它多说一句。",
+      "npcReactionEn": "the keeper decides not to keep; nobody adds a word on its behalf.",
+      "atlasHookZh": "记下的人决定不记",
+      "atlasHookEn": "the keeper decides not to keep",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 18
+    },
+    {
+      "id": "ef_endless_18_1",
+      "flag": "flag.endless.18.1",
+      "chapter": 1018,
+      "fromZh": "北崖还在原处",
+      "fromEn": "the northern cliff remains where it is",
+      "toZh": "恩希尔决定不替它决定去向",
+      "toEn": "Hersil chooses to not choose its destination",
+      "narrativeZh": "留下的东西仍留在原处；没有人替它多说一句。",
+      "narrativeEn": "what stayed remains where it is; nobody adds a word on its behalf.",
+      "npcReactionZh": "留下的东西仍留在原处；没有人替它多说一句。",
+      "npcReactionEn": "what stayed remains where it is; nobody adds a word on its behalf.",
+      "atlasHookZh": "留下的东西仍留在原处",
+      "atlasHookEn": "what stayed remains where it is",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 18
+    },
+    {
+      "id": "ef_endless_18_2",
+      "flag": "flag.endless.18.2",
+      "chapter": 1018,
+      "fromZh": "北崖还在原处",
+      "fromEn": "the northern cliff remains where it is",
+      "toZh": "恩希尔决定让风自己进出",
+      "toEn": "Hersil chooses to let the wind pass on its own",
+      "narrativeZh": "门缝留到天亮；没有人替它多说一句。",
+      "narrativeEn": "the narrow opening lasts until dawn; nobody adds a word on its behalf.",
+      "npcReactionZh": "门缝留到天亮；没有人替它多说一句。",
+      "npcReactionEn": "the narrow opening lasts until dawn; nobody adds a word on its behalf.",
+      "atlasHookZh": "门缝留到天亮",
+      "atlasHookEn": "the narrow opening lasts until dawn",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 18
+    },
+    {
+      "id": "ef_endless_19_0",
+      "flag": "flag.endless.19.0",
+      "chapter": 1019,
+      "fromZh": "水壶还在原处",
+      "fromEn": "the kettle remains where it is",
+      "toZh": "阿汐决定不替它决定去向",
+      "toEn": "Axi chooses to not choose its destination",
+      "narrativeZh": "留下的东西仍留在原处；没有人替它多说一句。",
+      "narrativeEn": "what stayed remains where it is; nobody adds a word on its behalf.",
+      "npcReactionZh": "留下的东西仍留在原处；没有人替它多说一句。",
+      "npcReactionEn": "what stayed remains where it is; nobody adds a word on its behalf.",
+      "atlasHookZh": "留下的东西仍留在原处",
+      "atlasHookEn": "what stayed remains where it is",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 19
+    },
+    {
+      "id": "ef_endless_19_1",
+      "flag": "flag.endless.19.1",
+      "chapter": 1019,
+      "fromZh": "水壶还在原处",
+      "fromEn": "the kettle remains where it is",
+      "toZh": "阿汐决定让风自己进出",
+      "toEn": "Axi chooses to let the wind pass on its own",
+      "narrativeZh": "门缝留到天亮；没有人替它多说一句。",
+      "narrativeEn": "the narrow opening lasts until dawn; nobody adds a word on its behalf.",
+      "npcReactionZh": "门缝留到天亮；没有人替它多说一句。",
+      "npcReactionEn": "the narrow opening lasts until dawn; nobody adds a word on its behalf.",
+      "atlasHookZh": "门缝留到天亮",
+      "atlasHookEn": "the narrow opening lasts until dawn",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 19
+    },
+    {
+      "id": "ef_endless_19_2",
+      "flag": "flag.endless.19.2",
+      "chapter": 1019,
+      "fromZh": "水壶还在原处",
+      "fromEn": "the kettle remains where it is",
+      "toZh": "阿汐决定不追量干痕",
+      "toEn": "Axi chooses to not measure the dry mark",
+      "narrativeZh": "潮水覆回船底；没有人替它多说一句。",
+      "narrativeEn": "the tide covers the hull mark again; nobody adds a word on its behalf.",
+      "npcReactionZh": "潮水覆回船底；没有人替它多说一句。",
+      "npcReactionEn": "the tide covers the hull mark again; nobody adds a word on its behalf.",
+      "atlasHookZh": "潮水覆回船底",
+      "atlasHookEn": "the tide covers the hull mark again",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 19
+    },
+    {
+      "id": "ef_endless_20_0",
+      "flag": "flag.endless.20.0",
+      "chapter": 1020,
+      "fromZh": "水壶还在原处",
+      "fromEn": "the kettle remains where it is",
+      "toZh": "渡人决定让风自己进出",
+      "toEn": "the ferryman chooses to let the wind pass on its own",
+      "narrativeZh": "门缝留到天亮；没有人替它多说一句。",
+      "narrativeEn": "the narrow opening lasts until dawn; nobody adds a word on its behalf.",
+      "npcReactionZh": "门缝留到天亮；没有人替它多说一句。",
+      "npcReactionEn": "the narrow opening lasts until dawn; nobody adds a word on its behalf.",
+      "atlasHookZh": "门缝留到天亮",
+      "atlasHookEn": "the narrow opening lasts until dawn",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 20
+    },
+    {
+      "id": "ef_endless_20_1",
+      "flag": "flag.endless.20.1",
+      "chapter": 1020,
+      "fromZh": "水壶还在原处",
+      "fromEn": "the kettle remains where it is",
+      "toZh": "渡人决定不追量干痕",
+      "toEn": "the ferryman chooses to not measure the dry mark",
+      "narrativeZh": "潮水覆回船底；没有人替它多说一句。",
+      "narrativeEn": "the tide covers the hull mark again; nobody adds a word on its behalf.",
+      "npcReactionZh": "潮水覆回船底；没有人替它多说一句。",
+      "npcReactionEn": "the tide covers the hull mark again; nobody adds a word on its behalf.",
+      "atlasHookZh": "潮水覆回船底",
+      "atlasHookEn": "the tide covers the hull mark again",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 20
+    },
+    {
+      "id": "ef_endless_20_2",
+      "flag": "flag.endless.20.2",
+      "chapter": 1020,
+      "fromZh": "水壶还在原处",
+      "fromEn": "the kettle remains where it is",
+      "toZh": "渡人决定不催合上薄簿",
+      "toEn": "the ferryman chooses to not hurry the ledger shut",
+      "narrativeZh": "页角自翻而无人补记；没有人替它多说一句。",
+      "narrativeEn": "the page turns without an added entry; nobody adds a word on its behalf.",
+      "npcReactionZh": "页角自翻而无人补记；没有人替它多说一句。",
+      "npcReactionEn": "the page turns without an added entry; nobody adds a word on its behalf.",
+      "atlasHookZh": "页角自翻而无人补记",
+      "atlasHookEn": "the page turns without an added entry",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 20
+    },
+    {
+      "id": "ef_endless_21_0",
+      "flag": "flag.endless.21.0",
+      "chapter": 1021,
+      "fromZh": "薄簿还在原处",
+      "fromEn": "the thin ledger remains where it is",
+      "toZh": "渡人决定不追量干痕",
+      "toEn": "the ferryman chooses to not measure the dry mark",
+      "narrativeZh": "潮水覆回船底；没有人替它多说一句。",
+      "narrativeEn": "the tide covers the hull mark again; nobody adds a word on its behalf.",
+      "npcReactionZh": "潮水覆回船底；没有人替它多说一句。",
+      "npcReactionEn": "the tide covers the hull mark again; nobody adds a word on its behalf.",
+      "atlasHookZh": "潮水覆回船底",
+      "atlasHookEn": "the tide covers the hull mark again",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 21
+    },
+    {
+      "id": "ef_endless_21_1",
+      "flag": "flag.endless.21.1",
+      "chapter": 1021,
+      "fromZh": "薄簿还在原处",
+      "fromEn": "the thin ledger remains where it is",
+      "toZh": "渡人决定不催合上薄簿",
+      "toEn": "the ferryman chooses to not hurry the ledger shut",
+      "narrativeZh": "页角自翻而无人补记；没有人替它多说一句。",
+      "narrativeEn": "the page turns without an added entry; nobody adds a word on its behalf.",
+      "npcReactionZh": "页角自翻而无人补记；没有人替它多说一句。",
+      "npcReactionEn": "the page turns without an added entry; nobody adds a word on its behalf.",
+      "atlasHookZh": "页角自翻而无人补记",
+      "atlasHookEn": "the page turns without an added entry",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 21
+    },
+    {
+      "id": "ef_endless_21_2",
+      "flag": "flag.endless.21.2",
+      "chapter": 1021,
+      "fromZh": "薄簿还在原处",
+      "fromEn": "the thin ledger remains where it is",
+      "toZh": "渡人决定不叫醒林子",
+      "toEn": "the ferryman chooses to not wake the wood",
+      "narrativeZh": "树只认你的心跳；没有人替它多说一句。",
+      "narrativeEn": "the trees know only your heartbeat; nobody adds a word on its behalf.",
+      "npcReactionZh": "树只认你的心跳；没有人替它多说一句。",
+      "npcReactionEn": "the trees know only your heartbeat; nobody adds a word on its behalf.",
+      "atlasHookZh": "树只认你的心跳",
+      "atlasHookEn": "the trees know only your heartbeat",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 21
+    },
+    {
+      "id": "ef_endless_22_0",
+      "flag": "flag.endless.22.0",
+      "chapter": 1022,
+      "fromZh": "摆旁还在原处",
+      "fromEn": "beside the pendulum remains where it is",
+      "toZh": "恩希尔决定不催合上薄簿",
+      "toEn": "Hersil chooses to not hurry the ledger shut",
+      "narrativeZh": "页角自翻而无人补记；没有人替它多说一句。",
+      "narrativeEn": "the page turns without an added entry; nobody adds a word on its behalf.",
+      "npcReactionZh": "页角自翻而无人补记；没有人替它多说一句。",
+      "npcReactionEn": "the page turns without an added entry; nobody adds a word on its behalf.",
+      "atlasHookZh": "页角自翻而无人补记",
+      "atlasHookEn": "the page turns without an added entry",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 22
+    },
+    {
+      "id": "ef_endless_22_1",
+      "flag": "flag.endless.22.1",
+      "chapter": 1022,
+      "fromZh": "摆旁还在原处",
+      "fromEn": "beside the pendulum remains where it is",
+      "toZh": "恩希尔决定不叫醒林子",
+      "toEn": "Hersil chooses to not wake the wood",
+      "narrativeZh": "树只认你的心跳；没有人替它多说一句。",
+      "narrativeEn": "the trees know only your heartbeat; nobody adds a word on its behalf.",
+      "npcReactionZh": "树只认你的心跳；没有人替它多说一句。",
+      "npcReactionEn": "the trees know only your heartbeat; nobody adds a word on its behalf.",
+      "atlasHookZh": "树只认你的心跳",
+      "atlasHookEn": "the trees know only your heartbeat",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 22
+    },
+    {
+      "id": "ef_endless_22_2",
+      "flag": "flag.endless.22.2",
+      "chapter": 1022,
+      "fromZh": "摆旁还在原处",
+      "fromEn": "beside the pendulum remains where it is",
+      "toZh": "恩希尔决定不把它记下来",
+      "toEn": "Hersil chooses to leave it unrecorded",
+      "narrativeZh": "记下的人决定不记；没有人替它多说一句。",
+      "narrativeEn": "the keeper decides not to keep; nobody adds a word on its behalf.",
+      "npcReactionZh": "记下的人决定不记；没有人替它多说一句。",
+      "npcReactionEn": "the keeper decides not to keep; nobody adds a word on its behalf.",
+      "atlasHookZh": "记下的人决定不记",
+      "atlasHookEn": "the keeper decides not to keep",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 22
+    },
+    {
+      "id": "ef_endless_23_0",
+      "flag": "flag.endless.23.0",
+      "chapter": 1023,
+      "fromZh": "摆旁还在原处",
+      "fromEn": "beside the pendulum remains where it is",
+      "toZh": "阿汐决定不叫醒林子",
+      "toEn": "Axi chooses to not wake the wood",
+      "narrativeZh": "树只认你的心跳；没有人替它多说一句。",
+      "narrativeEn": "the trees know only your heartbeat; nobody adds a word on its behalf.",
+      "npcReactionZh": "树只认你的心跳；没有人替它多说一句。",
+      "npcReactionEn": "the trees know only your heartbeat; nobody adds a word on its behalf.",
+      "atlasHookZh": "树只认你的心跳",
+      "atlasHookEn": "the trees know only your heartbeat",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 23
+    },
+    {
+      "id": "ef_endless_23_1",
+      "flag": "flag.endless.23.1",
+      "chapter": 1023,
+      "fromZh": "摆旁还在原处",
+      "fromEn": "beside the pendulum remains where it is",
+      "toZh": "阿汐决定不把它记下来",
+      "toEn": "Axi chooses to leave it unrecorded",
+      "narrativeZh": "记下的人决定不记；没有人替它多说一句。",
+      "narrativeEn": "the keeper decides not to keep; nobody adds a word on its behalf.",
+      "npcReactionZh": "记下的人决定不记；没有人替它多说一句。",
+      "npcReactionEn": "the keeper decides not to keep; nobody adds a word on its behalf.",
+      "atlasHookZh": "记下的人决定不记",
+      "atlasHookEn": "the keeper decides not to keep",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 23
+    },
+    {
+      "id": "ef_endless_23_2",
+      "flag": "flag.endless.23.2",
+      "chapter": 1023,
+      "fromZh": "摆旁还在原处",
+      "fromEn": "beside the pendulum remains where it is",
+      "toZh": "阿汐决定不替它决定去向",
+      "toEn": "Axi chooses to not choose its destination",
+      "narrativeZh": "留下的东西仍留在原处；没有人替它多说一句。",
+      "narrativeEn": "what stayed remains where it is; nobody adds a word on its behalf.",
+      "npcReactionZh": "留下的东西仍留在原处；没有人替它多说一句。",
+      "npcReactionEn": "what stayed remains where it is; nobody adds a word on its behalf.",
+      "atlasHookZh": "留下的东西仍留在原处",
+      "atlasHookEn": "what stayed remains where it is",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 23
+    },
+    {
+      "id": "ef_endless_24_0",
+      "flag": "flag.endless.24.0",
+      "chapter": 1024,
+      "fromZh": "钟壳还在原处",
+      "fromEn": "the bell shell remains where it is",
+      "toZh": "阿汐决定不把它记下来",
+      "toEn": "Axi chooses to leave it unrecorded",
+      "narrativeZh": "记下的人决定不记；没有人替它多说一句。",
+      "narrativeEn": "the keeper decides not to keep; nobody adds a word on its behalf.",
+      "npcReactionZh": "记下的人决定不记；没有人替它多说一句。",
+      "npcReactionEn": "the keeper decides not to keep; nobody adds a word on its behalf.",
+      "atlasHookZh": "记下的人决定不记",
+      "atlasHookEn": "the keeper decides not to keep",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 24
+    },
+    {
+      "id": "ef_endless_24_1",
+      "flag": "flag.endless.24.1",
+      "chapter": 1024,
+      "fromZh": "钟壳还在原处",
+      "fromEn": "the bell shell remains where it is",
+      "toZh": "阿汐决定不替它决定去向",
+      "toEn": "Axi chooses to not choose its destination",
+      "narrativeZh": "留下的东西仍留在原处；没有人替它多说一句。",
+      "narrativeEn": "what stayed remains where it is; nobody adds a word on its behalf.",
+      "npcReactionZh": "留下的东西仍留在原处；没有人替它多说一句。",
+      "npcReactionEn": "what stayed remains where it is; nobody adds a word on its behalf.",
+      "atlasHookZh": "留下的东西仍留在原处",
+      "atlasHookEn": "what stayed remains where it is",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 24
+    },
+    {
+      "id": "ef_endless_24_2",
+      "flag": "flag.endless.24.2",
+      "chapter": 1024,
+      "fromZh": "钟壳还在原处",
+      "fromEn": "the bell shell remains where it is",
+      "toZh": "阿汐决定让风自己进出",
+      "toEn": "Axi chooses to let the wind pass on its own",
+      "narrativeZh": "门缝留到天亮；没有人替它多说一句。",
+      "narrativeEn": "the narrow opening lasts until dawn; nobody adds a word on its behalf.",
+      "npcReactionZh": "门缝留到天亮；没有人替它多说一句。",
+      "npcReactionEn": "the narrow opening lasts until dawn; nobody adds a word on its behalf.",
+      "atlasHookZh": "门缝留到天亮",
+      "atlasHookEn": "the narrow opening lasts until dawn",
+      "canonEvidence": [
+        "程序化扇区 · 与余响集同一套物件与动作（非手写新篇）"
+      ],
+      "canonFit": "procedural",
+      "qaNotesZh": "由已审生成器按固定种子派生，非人工逐条润色。",
+      "qaNotesEn": "Derived by the audited generator from a fixed seed; not hand-polished line by line.",
+      "approval": {
+        "by": "generator:KI-723",
+        "at": "1970-01-01T00:00:00.000Z",
+        "noteZh": "生成器级人工闸：同一套规则对整个 seed 空间放行。",
+        "noteEn": "Generator-level human gate: one audited rule set for the whole seed space."
+      },
+      "source": {
+        "generatedAt": null,
+        "model": null,
+        "focus": "endless-world",
+        "digest": "seed:723",
+        "qaDigest": "audited-generator:KI-723"
+      },
+      "depth": 24
     }
   ]
 }
