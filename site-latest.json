@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "03c696d1fe2053e04819ea0810238dfa621ef5af",
+  "head": "d7dceb8233172d451f26154dec1024a3e2d95a07",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-25T00:13:35Z",
+  "subject": "feat: KI-755 第94篇《替人记的雨》· 94篇全套对齐",
+  "date": "2026-11-25T08:44:02+08:00",
   "kv": {
-    "KI.rows": 672,
-    "KI.Implemented": 493,
+    "KI.rows": 673,
+    "KI.Implemented": 494,
     "KI.Partial": 169,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/03c696d1fe2053e04819ea0810238dfa621ef5af",
+    "url": "https://github.com/xiaodernan/caesura/commit/d7dceb8233172d451f26154dec1024a3e2d95a07",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
