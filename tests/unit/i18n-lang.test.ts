@@ -140,9 +140,12 @@ describe('t() 的行为', () => {
     expect(t('stak.profile.name', { n: 2 })).toBe('Profile 2')
   })
 
-  it('每次语言切换只发一个事件，并同步标准 html.lang', () => {
+  it('每次语言切换只发一个事件，并同步标准 html.lang 与 CSS 用的 data-lang（KI-754）', () => {
     const events = new EventTarget()
-    const doc = Object.assign(events, { documentElement: { lang: '' } })
+    const attrs: Record<string, string> = {}
+    const doc = Object.assign(events, {
+      documentElement: { lang: '', setAttribute: (k: string, v: string) => { attrs[k] = v } },
+    })
     vi.stubGlobal('document', doc)
     const seen: string[] = []
     events.addEventListener('caesura-language-change', (event) => {
@@ -151,10 +154,13 @@ describe('t() 的行为', () => {
 
     expect(cycleLang()).toBe('zh-TW')
     expect(doc.documentElement.lang).toBe('zh-Hant')
+    expect(attrs['data-lang']).toBe('zh-TW')
     expect(cycleLang()).toBe('en')
     expect(doc.documentElement.lang).toBe('en')
+    expect(attrs['data-lang']).toBe('en')
     expect(cycleLang()).toBe('zh')
     expect(doc.documentElement.lang).toBe('zh-CN')
+    expect(attrs['data-lang']).toBe('zh')
     expect(seen).toEqual([...LANGS.slice(1), LANGS[0]])
   })
 })

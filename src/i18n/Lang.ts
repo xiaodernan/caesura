@@ -1445,6 +1445,10 @@ export const setLang = (next: Lang): Lang => {
   } catch { /* noop */ }
   if (typeof document !== 'undefined' && document.documentElement && typeof document.dispatchEvent === 'function') {
     document.documentElement.lang = current === 'en' ? 'en' : current === 'zh-TW' ? 'zh-Hant' : 'zh-CN'
+    // KI-754：CSS 的可见性开关（首页 zh-i18n / en-i18n、各静态页 .zh-copy/.en-copy）
+    // 读的是 data-lang，不是标准 lang。少写这一笔，按 L 切到 en 后界面仍留中文，
+    // 违反「英文模式全英文」。标准 lang 保留 BCP-47 值，data-lang 保留三态键。
+    document.documentElement.setAttribute('data-lang', current)
     document.dispatchEvent(new CustomEvent<Lang>('caesura-language-change', { detail: current }))
   }
   return current
