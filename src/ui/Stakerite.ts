@@ -65,7 +65,7 @@ const PLAYER_MANUAL: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">语言切换</span><span class="note">在世界里按 L：简体 → 繁体 → 英文，三态循环；面板开着时先收起再按，免得半屏旧字半屏新字</span></div>
 <div class="row"><span class="name">调音桩</span><span class="note">Tab 开地图（看过哪片区）；再按一次收起；档案室 / 终末·叹息</span></div>
 <div class="row"><span class="name">存档</span><span class="note">调音桩前按 E 休息并保存；首领倒下会自动存</span></div>
-<div class="row"><span class="name">配方</span><span class="note">Tab → 调音 → 查看派生面板（防御 / 负重上限 / 暴击率 / 暴击倍数 / 过载</span></div>
+<div class="row"><span class="name">配方</span><span class="note">Tab → 调音 → 查看派生面板（防御 / 负重上限 / 暴击率 / 暴击倍数 / 过载）</span></div>
 
 <h2>深处与余响 · 无尽的那一片</h2>
 <div class="row"><span class="name">下潜</span><span class="note">Tab → 深处：每一层都有六处可看、三条可做；已审的层留下真旗标，更深的层按确定性复沓，不重复也不空。下面没有尽头，但你随时能回地表</span></div>

@@ -83,4 +83,13 @@ describe('KI-742 · shouldCycleLang 真值表', () => {
     for (const s of ['下潜', '余响集 · 九十五篇', '世界谱', '六处可看']) expect(manual, `zh 缺：${s}`).toContain(s)
     for (const s of ['Descend', 'The Aftermath · 95 stories', 'World Codex', 'six things to see']) expect(manual, `en 缺：${s}`).toContain(s)
   })
+
+  it('KI-760：说明书中文块括号逐行闭合（错别字/漏字门）', () => {
+    const stak = read('src/ui/Stakerite.ts')
+    const manual = stak.slice(stak.indexOf('const PLAYER_MANUAL'), stak.indexOf('const PLAYER_ATLAS') > 0 ? stak.indexOf('const PLAYER_ATLAS') : undefined)
+    const zh = manual.slice(manual.indexOf('  zh: `'), manual.indexOf('  en: `'))
+    for (const line of zh.split('\n')) {
+      expect(line.split('（').length, `中文开括号未闭合：${line.slice(0, 60)}`).toBe(line.split('）').length)
+    }
+  })
 })
