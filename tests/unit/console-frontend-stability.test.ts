@@ -298,6 +298,7 @@ describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
       "'篇九十一': 'No. 91',",
       "'篇九十二': 'No. 92',",
       "'篇九十三': 'No. 93',",
+      "'篇九十四': 'No. 94',",,
       "'篇九十一 · 未铸之钟': 'No. 91 · The Bell Not Cast',",
       "'《未铸之钟》': 'The Bell Not Cast',",
       "'未铸之钟': 'The Bell Not Cast',",
@@ -305,6 +306,8 @@ describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
       "'《浇口上的黑》': 'The Black at the Pour Gate',",
       "'浇口上的黑': 'The Black at the Pour Gate',",
       "'模上的第二道指印': 'The Second Print on the Mould',",
+      "'替人记的雨': 'The Rain Kept for Another',",
+      "'第九十四篇 · 替人记的雨': 'No. 94 · The Rain Kept for Another',",
       "'第九十三篇 · 模上的第二道指印': 'No. 93 · The Second Print on the Mould',",
       "'《风在灰上写字》': 'The Wind Writes on the Ash',",
       "'风在灰上写字': 'The Wind Writes on the Ash',",
@@ -327,7 +330,7 @@ describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
 
       "'余响九十二篇 · 沉默的编年史': 'Ninety-Two Chronicles · The Chronicles of Silence',",
       "'九十二篇都是《止音纪元》的人间注脚——每一篇双语对照、零 LLM；完整全文见': 'The ninety-two stories are The Epoch of Hush in mortal footnotes — each one bilingual, zero LLM; the full volume:',",
-      "'（约四百六十分钟 · 九十二篇整册可读）': '(about 460 minutes · read all ninety-three)',",
+      "'（约四百六十分钟 · 九十二篇整册可读）': '(about 460 minutes · read all ninety-four)',",
 
       "'余响三十七篇 · 沉默的编年史': 'Thirty-seven Chronicles · The Chronicles of Silence',",
       "'STATEGRAPH · 状态图内核': 'State Graph Kernel',",

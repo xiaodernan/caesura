@@ -698,3 +698,4 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | KI-752 | **说明书入口改贴左下**：避开标题屏右下固定开始按钮的遮盖；DOM 量测重叠 0 + boot-screen 1 腿 | KI-752 |
 | KI-753 | **Pages 部署竞态根治**：上传前删旧 attempt 同名 artifact + `actions:write`；admin-analytics 1 腿钉住顺序 | KI-753 |
 | KI-754 | **L 热键同步 data-lang**：`setLang()` 补写三态属性，英文模式静态双语块真正切英；浏览器实测 + i18n-lang 1 腿 | KI-754 |
+| KI-755 | **第 94 篇《替人记的雨》**：双语新故事 + 全集/索引/控制台/教程/首页/README/i18n 全套对齐 + 新故事测试 | KI-755 |

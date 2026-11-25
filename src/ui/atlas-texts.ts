@@ -4737,5 +4737,71 @@ export const STORY_CHAPTERS: StoryChapter[] = [
 <p class="coda">The age of hush has not ended. It has gained one more layer: an empty place is not only empty. It keeps, for someone who pressed hard, the pressure of that one moment.</p>`,
   },
 
+  {
+    no: 94,
+    zhTitle: "替人记的雨",
+    enTitle: "The Rain Kept for Another",
+    zh: `<p>雨审判那天，庭上一句话也没有。</p>
+<p>阿汐那天也在庭上，她记得雨声。</p>
+<p>书记员坐在窗边，把雨一笔一笔记下来：落了几刻，什么时候大，什么时候小，风从哪一边来。</p>
+<p>一个老农站在最后，说他不识字，请书记员替他记。</p>
+
+<div class="beat">· · ·</div>
+
+<p>书记员问：你记它做什么？</p>
+<p>老农说：我儿子在海那边。他要是问起这里的雨，我总得有个东西给他看。</p>
+<p>书记员说：你活不到他回来。</p>
+<p>老农说：那就让纸活到。</p>
+<p>他记雨不用字，用点。雨大，墨点就浓；雨小，点就淡得几乎看不见。纸被窗风吹得起了皱，他拿镇纸压住，一边压一边记。</p>
+<p>老农每天散庭前都来问一句：今天记了吗？书记员说记了，他就点点头走，像刚领过一份口粮。</p>
+<p>第三十七天没有雨。书记员没有写「无雨」，那一格他留了白，只在旁边写：今日无声。</p>
+<p>因为雨停也是一种雨，得有人替它记着。</p>
+
+<div class="beat">· · ·</div>
+
+<p>于是他记了三十七天。第一天雨大，第十一天只有一阵，第二十二天整夜没停。第三十七天，雨停了。</p>
+<p>那天老农没有再来。书记员去他住的地方，看见门开着，灶是冷的。</p>
+<p>他回来，在簿子上老农那一栏下面按了一个指印——老农说过的，不会写字，只能按一下。</p>
+
+<div class="beat">· · ·</div>
+
+<p>后来有人翻到那一页。雨还在，指印也在。庭上早就没有雨审判了，纸倒还在下。</p>
+<p>书记员已经不在。新来的人不懂那一栏是什么意思，就照着抄了一份，寄到海那边。</p>
+
+<p class="coda">有些账不是算给活人看的。</p>
+<p class="coda">它是为让一件发生过的事，在另一个人手里还能继续发生——哪怕记账的人和要账的人都已不在。</p>
+<p class="coda">止音纪元没有结束。它又多了一个证据：雨停了三十七年，簿子还在替两个人下雨。</p>`,
+    en: `<p>On the day of the Rain Tribunal no one in the court spoke.</p>
+<p>Axi was in the court that day; she remembers the sound of rain.</p>
+<p>The clerk sat by the window and wrote the rain down: how long it fell, when it grew, when it thinned, which side the wind came from.</p>
+<p>An old farmer stood at the back. He could not read; he asked the clerk to keep the rain for him.</p>
+
+<div class="beat">· · ·</div>
+
+<p>The clerk asked: why write it down?</p>
+<p>The farmer said: my son is across the sea. If he asks about the rain here, I must have something to show him.</p>
+<p>The clerk said: you will not live till he returns.</p>
+<p>The farmer said: then let the paper live.</p>
+<p>He did not write the rain in words; he wrote it in dots. Heavy rain, a dark dot; light rain, a dot so pale it was almost invisible. When the window wind wrinkled the paper he held it flat with a paperweight and kept writing.</p>
+<p>Each day before court ended the farmer came and asked: did you keep it today? The clerk said yes, and the farmer nodded and went, as if he had drawn his daily ration.</p>
+<p>On the thirty-seventh day there was no rain. The clerk did not write "no rain". He left the column blank and wrote beside it: today, silence.</p>
+<p>For the stopping of rain is also a kind of rain, and someone must keep it.</p>
+
+<div class="beat">· · ·</div>
+
+<p>So he wrote thirty-seven days. Heavy on the first; a brief shower on the eleventh; all night on the twenty-second. On the thirty-seventh the rain stopped.</p>
+<p>The farmer did not come that day. The clerk went to where he lived; the door stood open and the stove was cold.</p>
+<p>He came back and pressed a fingerprint beneath the farmer's column — the farmer had said it: he could not write; he could only press.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Years later someone turned to that page. The rain was still there, and so was the print. There was no Rain Tribunal any more, but the paper was still falling.</p>
+<p>The clerk was gone too. The newcomer did not know what the column meant, so he copied it and sent the copy across the sea.</p>
+
+<p class="coda">Some ledgers are not kept for the living.</p>
+<p class="coda">They are kept so that something which happened can keep happening in another person's hands — even when both the keeper and the one who asked are gone.</p>
+<p class="coda">The age of hush has not ended. It has one more piece of evidence: the rain stopped thirty-seven years ago, and the ledger is still raining for two people.</p>`,
+  },
+
 ]
 

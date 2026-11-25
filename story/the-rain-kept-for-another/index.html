@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>替人记的雨 / The Rain Kept for Another — CAESURA · 余响集 · 第九十四篇</title>
+<meta name="description" content="《止音纪元》余响集第九十四篇：雨审判那天，书记员替不识字的老农把雨记了三十七天。雨停、人故，簿子还在替两个人下雨。双语·零网络·零 LLM。 / The ninety-fourth piece of The Aftermath: at the Rain Tribunal the clerk keeps thirty-seven days of rain for a farmer who cannot read. The rain stops, the man dies, the ledger keeps raining. Bilingual, offline." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔔</text></svg>">
+<style>
+  :root {
+    --gold: #e8c58a;
+    --gold-soft: rgba(232,197,138,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(30,22,14,.72);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#080706; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(232,197,138,.13), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(110,80,52,.22), transparent 62%),
+      radial-gradient(620px 420px at 14% 102%, rgba(150,120,90,.08), transparent 60%),
+      #080706;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(232,197,138,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(232,197,138,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(232,197,138,.22); box-shadow:0 0 16px rgba(232,197,138,.25); }
+
+  [data-lang="zh-TW"] .en-copy { display:none !important; }
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.2rem, 8vw, 3.6rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #e8c58a 28%, #c39a5e 58%, #77572f 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(232,197,138,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.8em; color:rgba(232,197,138,.55); font-size:.9rem; }
+  article p.coda { text-indent:0; text-align:center; color:var(--gold); font-size:.95rem; letter-spacing:.08em; margin-bottom:.9em; }
+  article p.coda:last-child { margin-top:1.8em; color:rgba(243,237,224,.7); font-size:.9rem; font-style:italic; }
+
+  .note { max-width:760px; margin:26px auto 0; font-size:.74rem; line-height:1.9; color:rgba(243,237,224,.42); text-align:center; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; }
+
+  footer { margin-top:44px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 22px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:1rem; line-height:1.96; } header.hero { padding:40px 8px 22px; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/the-second-print-on-the-mould/"><span class="zh-copy">前篇《模上的第二道指印》</span><span class="en-copy">Prev · “The Second Print on the Mould”</span></a>
+      <a href="/caesura/story/atlas/"><span class="zh-copy">余响索引</span><span class="en-copy">Motif Atlas</span></a>
+      <a href="/caesura/story/anthology/"><span class="zh-copy">余响集</span><span class="en-copy">The Aftermath</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <a href="/caesura/tutorial/"><span class="zh-copy">教程</span><span class="en-copy">Tutorial</span></a>
+      <a href="/caesura/"><span class="zh-copy">游戏</span><span class="en-copy">Game</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>余响集</b> · 第九十四篇</p>
+    <p class="kicker en-copy">Short story · <b>The Aftermath</b> · No. 94</p>
+    <h1 class="zh-copy">替人记的雨</h1>
+    <h1 class="en-copy">The Rain Kept for Another</h1>
+    <p class="subtitle zh-copy">雨审判 · 书记员的簿子 · 替不识字的人记下的三十七天</p>
+    <p class="subtitle en-copy">The Rain Tribunal — a clerk's ledger, thirty-seven days kept for a man who could not read</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 6 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 零网络</p>
+    <p class="meta en-copy">about 6 minutes · same world as the <a href="/caesura/codex/">codex</a> · fully offline</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+<p>雨审判那天，庭上一句话也没有。</p>
+<p>阿汐那天也在庭上，她记得雨声。</p>
+<p>书记员坐在窗边，把雨一笔一笔记下来：落了几刻，什么时候大，什么时候小，风从哪一边来。</p>
+<p>一个老农站在最后，说他不识字，请书记员替他记。</p>
+
+<div class="beat">· · ·</div>
+
+<p>书记员问：你记它做什么？</p>
+<p>老农说：我儿子在海那边。他要是问起这里的雨，我总得有个东西给他看。</p>
+<p>书记员说：你活不到他回来。</p>
+<p>老农说：那就让纸活到。</p>
+<p>他记雨不用字，用点。雨大，墨点就浓；雨小，点就淡得几乎看不见。纸被窗风吹得起了皱，他拿镇纸压住，一边压一边记。</p>
+<p>老农每天散庭前都来问一句：今天记了吗？书记员说记了，他就点点头走，像刚领过一份口粮。</p>
+<p>第三十七天没有雨。书记员没有写「无雨」，那一格他留了白，只在旁边写：今日无声。</p>
+<p>因为雨停也是一种雨，得有人替它记着。</p>
+
+<div class="beat">· · ·</div>
+
+<p>于是他记了三十七天。第一天雨大，第十一天只有一阵，第二十二天整夜没停。第三十七天，雨停了。</p>
+<p>那天老农没有再来。书记员去他住的地方，看见门开着，灶是冷的。</p>
+<p>他回来，在簿子上老农那一栏下面按了一个指印——老农说过的，不会写字，只能按一下。</p>
+
+<div class="beat">· · ·</div>
+
+<p>后来有人翻到那一页。雨还在，指印也在。庭上早就没有雨审判了，纸倒还在下。</p>
+<p>书记员已经不在。新来的人不懂那一栏是什么意思，就照着抄了一份，寄到海那边。</p>
+
+<p class="coda">有些账不是算给活人看的。</p>
+<p class="coda">它是为让一件发生过的事，在另一个人手里还能继续发生——哪怕记账的人和要账的人都已不在。</p>
+<p class="coda">止音纪元没有结束。它又多了一个证据：雨停了三十七年，簿子还在替两个人下雨。</p>
+    </div>
+    <div class="en-copy">
+<p>On the day of the Rain Tribunal no one in the court spoke.</p>
+<p>Axi was in the court that day; she remembers the sound of rain.</p>
+<p>The clerk sat by the window and wrote the rain down: how long it fell, when it grew, when it thinned, which side the wind came from.</p>
+<p>An old farmer stood at the back. He could not read; he asked the clerk to keep the rain for him.</p>
+
+<div class="beat">· · ·</div>
+
+<p>The clerk asked: why write it down?</p>
+<p>The farmer said: my son is across the sea. If he asks about the rain here, I must have something to show him.</p>
+<p>The clerk said: you will not live till he returns.</p>
+<p>The farmer said: then let the paper live.</p>
+<p>He did not write the rain in words; he wrote it in dots. Heavy rain, a dark dot; light rain, a dot so pale it was almost invisible. When the window wind wrinkled the paper he held it flat with a paperweight and kept writing.</p>
+<p>Each day before court ended the farmer came and asked: did you keep it today? The clerk said yes, and the farmer nodded and went, as if he had drawn his daily ration.</p>
+<p>On the thirty-seventh day there was no rain. The clerk did not write "no rain". He left the column blank and wrote beside it: today, silence.</p>
+<p>For the stopping of rain is also a kind of rain, and someone must keep it.</p>
+
+<div class="beat">· · ·</div>
+
+<p>So he wrote thirty-seven days. Heavy on the first; a brief shower on the eleventh; all night on the twenty-second. On the thirty-seventh the rain stopped.</p>
+<p>The farmer did not come that day. The clerk went to where he lived; the door stood open and the stove was cold.</p>
+<p>He came back and pressed a fingerprint beneath the farmer's column — the farmer had said it: he could not write; he could only press.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Years later someone turned to that page. The rain was still there, and so was the print. There was no Rain Tribunal any more, but the paper was still falling.</p>
+<p>The clerk was gone too. The newcomer did not know what the column meant, so he copied it and sent the copy across the sea.</p>
+
+<p class="coda">Some ledgers are not kept for the living.</p>
+<p class="coda">They are kept so that something which happened can keep happening in another person's hands — even when both the keeper and the one who asked are gone.</p>
+<p class="coda">The age of hush has not ended. It has one more piece of evidence: the rain stopped thirty-seven years ago, and the ledger is still raining for two people.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">本篇为《余响集》双语对照 · 人工闸定稿 · 零网络 · 与<a href="/caesura/codex/">世界谱</a>同源世界观。<a href="/caesura/story/anthology/">全集：《余响集》</a> · <a href="/caesura/story/atlas/">母题检索：余响索引</a></span>
+    <span class="en-copy">“The Aftermath,” bilingual, offline, human-gated — same world as the <a href="/caesura/codex/">codex</a>. <a href="/caesura/story/anthology/">All stories</a> · <a href="/caesura/story/atlas/">Motif Atlas</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/the-one-left-empty/">篇九十 · 空着的一格</a> · <a href="/caesura/story/the-bell-not-cast/">篇九十一 · 未铸之钟</a> · <a href="/caesura/story/the-black-at-the-pour-gate/">篇九十二 · 浇口上的黑</a> · <a href="/caesura/story/the-second-print-on-the-mould/">篇九十三 · 模上的第二道指印</a> · <a href="/caesura/story/the-rain-kept-for-another/">篇九十四 · 替人记的雨</a> · <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/story/atlas/">余响索引</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/the-wind-writes-on-the-ash/">No. 89 · The Wind Writes on the Ash</a> · <a href="/caesura/story/the-one-left-empty/">No. 90 · The One Left Empty</a> · <a href="/caesura/story/the-bell-not-cast/">No. 91 · The Bell Not Cast</a> · <a href="/caesura/story/the-black-at-the-pour-gate/">No. 92 · The Black at the Pour Gate</a> · <a href="/caesura/story/anthology/">All stories</a> · <a href="/caesura/story/atlas/">Motif Atlas</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'en' ? 'en-US' : (lang === 'zh-TW' ? 'zh-TW' : 'zh-CN'));
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+    if (window.__caesuraZhTW) {
+      if (lang === 'zh-TW' && window.__caesuraZhTW.applyToDocument) window.__caesuraZhTW.applyToDocument();
+      else if (lang === 'zh' && window.__caesuraZhTW.restoreOriginals) window.__caesuraZhTW.restoreOriginals();
+    }
+    btn.textContent = lang === 'zh' ? '繁體' : (lang === 'zh-TW' ? 'EN' : '简体');
+  }
+  if (btn) btn.addEventListener('click', function () {
+    var cur = root.getAttribute('data-lang'); apply(cur === 'zh' ? 'zh-TW' : (cur === 'zh-TW' ? 'en' : 'zh'));
+  });
+  apply(saved === 'en' || saved === 'zh-TW' ? saved : 'zh');
+})();
+</script>
+<script defer src="../../tracker.js"></script>
+<script defer src="/caesura/zh-tw-converter.js"></script>
+<script defer src="/caesura/read-progress.js"></script>
+</body>
+</html>
