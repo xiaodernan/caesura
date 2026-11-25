@@ -13,7 +13,9 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # KI-753：串行而非抢占。并行会话连续推 commit 时，cancel-in-progress 会在
+  # upload/deploy 中途掐掉上一轮，留下孤儿 artifact，deploy-pages 随即 Found 0。
+  cancel-in-progress: false
 
 jobs:
   deploy:

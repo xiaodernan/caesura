@@ -238,6 +238,7 @@ describe('admin · 静态页与部署接线（防悄悄脱落）', () => {
     expect(yml).toContain('-X DELETE')
     expect(yml.indexOf('Remove stale github-pages artifact')).toBeLessThan(yml.indexOf('uses: actions/upload-pages-artifact@v3'))
     /* Found 0 artifact(s) 是元数据最终一致性：上传后必须等可见再 deploy。 */
+    expect(yml).toContain('cancel-in-progress: false') // 串行部署，避免并发推送抢掉上传中的 artifact
     expect(yml).toContain('Wait for artifact metadata to become visible')
     expect(yml.indexOf('Wait for artifact metadata')).toBeGreaterThan(yml.indexOf('uses: actions/upload-pages-artifact@v3'))
     expect(yml.indexOf('Wait for artifact metadata')).toBeLessThan(yml.indexOf('uses: actions/deploy-pages@v4'))
