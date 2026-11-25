@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "39c385b1c9feb7aa8a0a36a815cd45cb650a1e00",
+  "head": "28067756f69f29dc1e1d10a32cfae2e8c811db14",
   "branch": "master",
-  "subject": "feat: KI-756 无尽世界已审快照 12→24 扇区（36→72 条世界线）",
-  "date": "2026-11-25T09:09:01+08:00",
+  "subject": "site-latest: 39c385b (post-rebase reconcile)",
+  "date": "2026-11-25T09:09:54+08:00",
   "kv": {
     "KI.rows": 674,
     "KI.Implemented": 495,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/39c385b1c9feb7aa8a0a36a815cd45cb650a1e00",
+    "url": "https://github.com/xiaodernan/caesura/commit/28067756f69f29dc1e1d10a32cfae2e8c811db14",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
