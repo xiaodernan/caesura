@@ -56,4 +56,11 @@ describe('KI-655 · 谱册页误触修复（KI-645 行动 #3）', () => {
     expect(PAGE).not.toMatch(/<script[^>]*src=["']https?:/)
     expect(PAGE).not.toMatch(/<link[^>]*href=["']https?:/)
   })
+
+  it('KI-758：故事链接全部带语言半区标记（中文模式不许漏出英文故事名）', () => {
+    const links = [...PAGE.matchAll(/<a href="\/caesura\/story\/[^"]*"[^>]*>[^<]*<\/a>/g)].map((m) => m[0])
+    expect(links.length, '故事链接被扫空了').toBeGreaterThan(100)
+    const unmarked = links.filter((a) => !/class="[^"]*(zh-copy|en-copy)/.test(a))
+    expect(unmarked, `未标语言半区：${unmarked.slice(0, 3).join(' ')}`).toEqual([])
+  })
 })
