@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "e7688eb2cd310ebc40fccab855b12f269d0404e1",
+  "head": "b78a4f505f3e966350bf4293532f3d7d535ed56d",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-24T23:34:49Z",
+  "subject": "fix: KI-754 L 热键切换同步 html[data-lang]（英文模式静态双语块真切换）",
+  "date": "2026-11-25T08:04:29+08:00",
   "kv": {
-    "KI.rows": 671,
-    "KI.Implemented": 492,
+    "KI.rows": 672,
+    "KI.Implemented": 493,
     "KI.Partial": 169,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/e7688eb2cd310ebc40fccab855b12f269d0404e1",
+    "url": "https://github.com/xiaodernan/caesura/commit/b78a4f505f3e966350bf4293532f3d7d535ed56d",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
