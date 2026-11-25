@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "774608b697b4cd5609d054e979bc0e852bba24cf",
+  "head": "b0944e4e2dc3eb0df12120b38f1151526d5a2ed9",
   "branch": "master",
-  "subject": "site-latest: ccd9efa (post-rebase reconcile)",
-  "date": "2026-11-25T11:16:42+08:00",
+  "subject": "fix: KI-758 Codex 中文模式去中英夹杂（半区漏标 + zh 字段英文专名）",
+  "date": "2026-11-25T11:52:48+08:00",
   "kv": {
-    "KI.rows": 675,
-    "KI.Implemented": 496,
+    "KI.rows": 676,
+    "KI.Implemented": 497,
     "KI.Partial": 169,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/774608b697b4cd5609d054e979bc0e852bba24cf",
+    "url": "https://github.com/xiaodernan/caesura/commit/b0944e4e2dc3eb0df12120b38f1151526d5a2ed9",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
