@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "bee762d8d6aed4bec4b86049cc3c4eea1fc6f879",
+  "head": "a3f3a2887958d762e0dab6ab2ff5fafb38e2c3bb",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-25T00:05:34Z",
+  "subject": "fix: KI-753 Pages 部署改串行（cancel-in-progress:false）根治并发 artifact 竞态",
+  "date": "2026-11-25T08:12:05+08:00",
   "kv": {
     "KI.rows": 672,
     "KI.Implemented": 493,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/bee762d8d6aed4bec4b86049cc3c4eea1fc6f879",
+    "url": "https://github.com/xiaodernan/caesura/commit/a3f3a2887958d762e0dab6ab2ff5fafb38e2c3bb",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
