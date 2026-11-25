@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "966cbede9cc2b95bf7fbe50a4dd631d09ac5591e",
+  "head": "9d39cdcecb72ec43d3dc1b40749bff1273ec8070",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-25T01:10:00Z",
+  "subject": "feat: KI-757 第95篇《第二只碗》· 95篇全套对齐",
+  "date": "2026-11-25T11:13:14+08:00",
   "kv": {
-    "KI.rows": 674,
-    "KI.Implemented": 495,
+    "KI.rows": 675,
+    "KI.Implemented": 496,
     "KI.Partial": 169,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/966cbede9cc2b95bf7fbe50a4dd631d09ac5591e",
+    "url": "https://github.com/xiaodernan/caesura/commit/9d39cdcecb72ec43d3dc1b40749bff1273ec8070",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
