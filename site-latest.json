@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "d3e9051bdd5ebcce8abb6ff78cb5a220ba6cfe7d",
+  "head": "dfc89f3b7aae3c4eb994f93338bdaf071a5be6d9",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-25T04:23:16Z",
+  "subject": "fix: KI-760 说明书配方行括号闭合 + 逐行括号平衡守卫",
+  "date": "2026-11-25T13:04:30+08:00",
   "kv": {
-    "KI.rows": 677,
-    "KI.Implemented": 498,
+    "KI.rows": 678,
+    "KI.Implemented": 499,
     "KI.Partial": 169,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/d3e9051bdd5ebcce8abb6ff78cb5a220ba6cfe7d",
+    "url": "https://github.com/xiaodernan/caesura/commit/dfc89f3b7aae3c4eb994f93338bdaf071a5be6d9",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
